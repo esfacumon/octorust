@@ -1,8 +1,12 @@
 use crate::stack::Stack;
 
-// TODO: update limits
+// TODO:  address limits
 pub const MIN_ADDRESS: u16 = 0x001;
 pub const MAX_ADDRESS: u16 = 0xFFF;
+
+pub const WIDTH: usize = 640;
+pub const HEIGHT: usize = 320;
+
 pub enum Instruction {
     ClearScreen,
     FillScreen,
@@ -12,7 +16,7 @@ pub enum Instruction {
 }
 
 pub struct Chip8 {
-    pub pixel_array: [[bool; 640]; 320],
+    pub pixel_array: [[bool; WIDTH]; HEIGHT],
     memory: [u8; 4096],
     // index: u16,
     pc: u16,
@@ -40,7 +44,11 @@ impl Chip8 {
 
         // JUMP:
         chip8.memory[6] = 0x10;
-        chip8.memory[7] = 0x02;
+        chip8.memory[7] = 0x0A;
+
+        // SUBROUTINE CALL
+        chip8.memory[10] = 0x20;
+        chip8.memory[11] = 0x04;
         chip8
     }
 
@@ -216,17 +224,21 @@ impl Chip8 {
     }
 
     pub fn call_subroutine(pc: &mut u16, stack: &mut Stack<u16>, addr: u16) {
-        println!("EXE: JUMP INSTRUCTION");
+        println!("EXE: CALL INSTRUCTION");
 
         if Self::is_valid_address(addr) {
-            let _ = stack.push(*pc); //TODO: handle this correctly
+            if let Err(e) = stack.push(*pc) {
+                // TODO: handle this correctly
+                println!("Stack overflow: {:?}", e);
+            }
+            println!("STACK LENGTH: {:?}", stack.len());
             *pc = addr;
         }
     }
 
 
     pub fn cycle(&mut self) {
-        let instruction = self.fetch(); // not writing on memory so it's immutable. By reference bc we don't want it to take ownership. it shouldn't matter anyways.
+        let instruction = self.fetch();
         let decoded = self.decode(instruction);
         self.execute(decoded);
     }

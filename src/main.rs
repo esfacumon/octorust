@@ -21,6 +21,7 @@ const HEIGHT: u32 = 32 * SCALE_FACTOR;
 
 fn main() {
 
+    println!("hola");
     let mut chip8 = Chip8::new();
 
     let sdl_context = sdl2::init().unwrap();
@@ -54,7 +55,7 @@ fn main() {
 
         render(&chip8, &mut canvas);
 
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60) * 60);
+        ::std::thread::sleep(Duration::new(0, 1_000_000u32 / 60) * 60);
 
     }
 
