@@ -1,0 +1,18 @@
+# Binaries
+target/
+
+# Docs
+doc/
+ 
+# Logs
+*.log
+
+# System files
+.DS_Store
+
+# vscode config
+.vscode/
+
+# vim temp files
+*.swp
+*.swo
