@@ -1,11 +1,13 @@
-// use crate::stack::Stack;
+use crate::stack::Stack;
 
+// TODO: update limits
 pub const MIN_ADDRESS: u16 = 0x001;
 pub const MAX_ADDRESS: u16 = 0xFFF;
 pub enum Instruction {
     ClearScreen,
     FillScreen,
-    Jump { addr: u16}
+    Jump { addr: u16},
+    CallSubroutine { addr: u16},
     // ...
 }
 
@@ -14,7 +16,7 @@ pub struct Chip8 {
     memory: [u8; 4096],
     // index: u16,
     pc: u16,
-    // stack: Stack<u16>,
+    stack: Stack<u16>,
     // delay: u8,
     // sound: u8,
 }
@@ -26,7 +28,7 @@ impl Chip8 {
             memory: [0; 4096],
             // index: 0,
             pc: 0,
-            // stack: Stack::new(),
+            stack: Stack::new(),
             // delay: 0,
             // sound: 0,
         };
@@ -44,7 +46,10 @@ impl Chip8 {
 
     
     /**
-     * Read addr stored in PC from memory and returns it
+    Read addr stored in PC from memory and returns its value
+
+    # Returns
+    Instruction code
      */
     pub fn fetch(&mut self) -> u16 {
         println!("fet::PC: {}", self.pc);
@@ -73,6 +78,10 @@ impl Chip8 {
                 let addr: u16 = instruction % 0x1000;
                 Instruction::Jump { addr }
             },
+            0x2 => {
+                let addr: u16 = instruction % 0x1000;
+                Instruction::CallSubroutine { addr }
+            }
             _ => Instruction::FillScreen
         }
     }
@@ -83,6 +92,7 @@ impl Chip8 {
             Instruction::ClearScreen => Chip8::clear_screen(&mut self.pixel_array),
             Instruction::FillScreen => Chip8::fill_screen(&mut self.pixel_array),
             Instruction::Jump { addr } => Chip8::jump(&mut self.pc, addr),
+            Instruction::CallSubroutine { addr } => Chip8::call_subroutine(&mut self.pc, &mut self.stack, addr)
         }
     }
 
@@ -182,7 +192,6 @@ impl Chip8 {
  
 
     pub fn is_valid_address(addr: u16) -> bool {
-        // TODO: update limits
         addr >= MIN_ADDRESS && addr <= MAX_ADDRESS
     }
 
@@ -203,6 +212,15 @@ impl Chip8 {
         }
         else {
             println!("EXE: INVALID JUMP ADDRESS");
+        }
+    }
+
+    pub fn call_subroutine(pc: &mut u16, stack: &mut Stack<u16>, addr: u16) {
+        println!("EXE: JUMP INSTRUCTION");
+
+        if Self::is_valid_address(addr) {
+            let _ = stack.push(*pc); //TODO: handle this correctly
+            *pc = addr;
         }
     }
 

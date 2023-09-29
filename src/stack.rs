@@ -1,4 +1,3 @@
-/*
 pub struct Stack<T> {
     stack: Vec<T>,
 }
@@ -29,4 +28,3 @@ impl<T> Stack<T> {
         self.stack.len()
     }
 }
-*/
