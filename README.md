@@ -14,8 +14,9 @@ This project is in its early stages but aims to provide a solid foundation for C
   - Basic instructions:
     - ✅ `00E0`: clear screen
     - ✅ `1NNN`: jump
-    - ⌛ `2NNN` and `00EE`: subroutine call and return
-    - ⌛ `6XNN`: set register VX
+    - ✅ `2NNN`: subroutine call
+    - ⌛ `00EE`: subroutine return
+    - 🔜 `6XNN`: set register VX
     - 🔜 `7XNN`: add value to register VX
     - 🔜 `ANNN`: set index register I
     - 🔜 `DXYN`: display/draw
