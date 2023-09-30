@@ -18,11 +18,10 @@ impl<T> Stack<T> {
         Ok(())
     }
 
-/*
+    
     pub fn pop(&mut self) -> Option<T> {
         self.stack.pop()
     }
-*/
 
     pub fn len(&self) -> usize {
         self.stack.len()

@@ -1,4 +1,4 @@
-use crate::stack::Stack;
+use crate::stack::{Stack, self};
 
 // TODO:  address limits
 pub const MIN_ADDRESS: u16 = 0x001;
@@ -12,6 +12,7 @@ pub enum Instruction {
     FillScreen,
     Jump { addr: u16},
     CallSubroutine { addr: u16},
+    ReturnSubroutine,
     // ...
 }
 
@@ -100,7 +101,8 @@ impl Chip8 {
             Instruction::ClearScreen => Chip8::clear_screen(&mut self.pixel_array),
             Instruction::FillScreen => Chip8::fill_screen(&mut self.pixel_array),
             Instruction::Jump { addr } => Chip8::jump(&mut self.pc, addr),
-            Instruction::CallSubroutine { addr } => Chip8::call_subroutine(&mut self.pc, &mut self.stack, addr)
+            Instruction::CallSubroutine { addr } => Chip8::call_subroutine(&mut self.pc, &mut self.stack, addr),
+            Instruction::ReturnSubroutine => Chip8::return_subroutine(&mut self.pc, &mut self.stack)
         }
     }
 
@@ -234,6 +236,13 @@ impl Chip8 {
             println!("STACK LENGTH: {:?}", stack.len());
             *pc = addr;
         }
+    }
+
+    pub fn return_subroutine(pc: &mut u16, stack: &mut Stack<u16>) {
+        println!("EXE: CALL INSTRUCTION");
+
+        let return_addr = stack.pop().expect("Error: dirección de retorno faltante");
+        *pc = return_addr;
     }
 
 
