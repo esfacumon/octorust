@@ -1,4 +1,4 @@
-use crate::stack::{Stack, self};
+use crate::stack::Stack;
 
 // TODO:  address limits
 pub const MIN_ADDRESS: u16 = 0x001;
@@ -48,8 +48,21 @@ impl Chip8 {
         chip8.memory[7] = 0x0A;
 
         // SUBROUTINE CALL
-        chip8.memory[10] = 0x20;
-        chip8.memory[11] = 0x04;
+        chip8.memory[10] = 0x22;
+        chip8.memory[11] = 0x00;
+
+        // SUBROUTINE RETURN
+        chip8.memory[0x20A] = 0x00;
+        chip8.memory[0x20B] = 0xEE;
+
+        // inner subroutine call
+        chip8.memory[518] = 0x25;
+        chip8.memory[519] = 0x00;
+        
+        // inner return
+        chip8.memory[0x504] = 0x00;
+        chip8.memory[0x505] = 0xEE;
+
         chip8
     }
 
@@ -80,9 +93,10 @@ impl Chip8 {
             0x0 => {
                 match instruction {
                     0x00E0 =>  Instruction::ClearScreen,
+                    0x00EE => Instruction::ReturnSubroutine,
                     _ => Instruction::FillScreen,
                 }
-            }
+            },
             0x1 => {
                 let addr: u16 = instruction % 0x1000;
                 Instruction::Jump { addr }
@@ -90,7 +104,7 @@ impl Chip8 {
             0x2 => {
                 let addr: u16 = instruction % 0x1000;
                 Instruction::CallSubroutine { addr }
-            }
+            },
             _ => Instruction::FillScreen
         }
     }
@@ -239,9 +253,9 @@ impl Chip8 {
     }
 
     pub fn return_subroutine(pc: &mut u16, stack: &mut Stack<u16>) {
-        println!("EXE: CALL INSTRUCTION");
+        println!("EXE: RETURN INSTRUCTION");
 
-        let return_addr = stack.pop().expect("Error: dirección de retorno faltante");
+        let return_addr = stack.pop().expect("Error: Empty stack");
         *pc = return_addr;
     }
 

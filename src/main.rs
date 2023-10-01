@@ -97,7 +97,7 @@ fn render(chip8: &Chip8, canvas: &mut sdl2::render::Canvas<sdl2::video::Window>)
 
             canvas.set_draw_color(color);
             
-            let rect = Rect::new(x as i32, y as i32, 1, 1); // Asume que cada píxel es de 1x1
+            let rect = Rect::new(x as i32, y as i32, 1, 1); // TODO: adapt pixel size
             canvas.fill_rect(rect).expect("Error rendering pixel");
 
         }
