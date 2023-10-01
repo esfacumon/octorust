@@ -10,11 +10,11 @@ impl<T> Stack<T> {
     }
 
 
-    pub fn push(&mut self, valor: T) -> Result<(), &'static str> {
+    pub fn push(&mut self, value: T) -> Result<(), &'static str> {
         if self.stack.len() >= 16 {
             return Err("Error: Stack maximum size exceeded");
         }
-        self.stack.push(valor);
+        self.stack.push(value);
         Ok(())
     }
 

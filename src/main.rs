@@ -1,6 +1,7 @@
 mod stack;
 
 mod chip8;
+pub mod errors;
 use chip8::Chip8;
 use sdl2::rect::Rect;
 

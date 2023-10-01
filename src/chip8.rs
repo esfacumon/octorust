@@ -1,4 +1,5 @@
 use crate::stack::Stack;
+use crate::errors::SubroutineError;
 
 // TODO:  address limits
 pub const MIN_ADDRESS: u16 = 0x001;
@@ -123,7 +124,12 @@ impl Chip8 {
             Instruction::ClearScreen => Chip8::clear_screen(&mut self.pixel_array),
             Instruction::FillScreen => Chip8::fill_screen(&mut self.pixel_array),
             Instruction::Jump { addr } => Chip8::jump(&mut self.pc, addr),
-            Instruction::CallSubroutine { addr } => Chip8::call_subroutine(&mut self.pc, &mut self.stack, addr),
+            Instruction::CallSubroutine { addr } => { 
+                match Chip8::call_subroutine(&mut self.pc, &mut self.stack, addr) {
+                    Ok(_) => (),
+                    Err(e) => println!("Error: {:?}", e),
+                }
+            },
             Instruction::ReturnSubroutine => Chip8::return_subroutine(&mut self.pc, &mut self.stack),
             Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value)
         }
@@ -248,17 +254,20 @@ impl Chip8 {
         }
     }
 
-    pub fn call_subroutine(pc: &mut u16, stack: &mut Stack<u16>, addr: u16) {
+    pub fn call_subroutine(pc: &mut u16, stack: &mut Stack<u16>, addr: u16) -> Result<(), SubroutineError> {
         println!("EXE: CALL INSTRUCTION");
 
-        if Self::is_valid_address(addr) {
-            if let Err(e) = stack.push(*pc) {
-                // TODO: handle this correctly
-                println!("Stack overflow: {:?}", e);
-            }
-            println!("STACK LENGTH: {:?}", stack.len());
-            *pc = addr;
+        if !Self::is_valid_address(addr) {
+            return Err(SubroutineError::InvalidAddress(addr));
         }
+
+        if let Err(_) = stack.push(*pc) {
+            return Err(SubroutineError::StackOverflow);
+        }
+
+        println!("STACK LENGTH: {:?}", stack.len());
+        *pc = addr;
+        Ok(())
     }
 
     pub fn return_subroutine(pc: &mut u16, stack: &mut Stack<u16>) {
@@ -290,4 +299,33 @@ impl Chip8 {
         self.execute(decoded);
     }
 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_nibble() {
+        let instruction: u16 = 0x1234;
+        assert_eq!(Chip8::get_nibble(instruction, 1), 0x1);
+        assert_eq!(Chip8::get_nibble(instruction, 2), 0x2);
+        assert_eq!(Chip8::get_nibble(instruction, 3), 0x3);
+        assert_eq!(Chip8::get_nibble(instruction, 4), 0x4);
+    }
+
+    #[test]
+    fn test_call_subroutine() {
+        let mut pc: u16 = 0x100;
+        let mut stack: Stack<u16> = Stack::new();
+        let mut addr: u16 = 0x111;
+
+        assert!(Chip8::call_subroutine(&mut pc, &mut stack, addr).is_ok());
+        assert_eq!(pc, addr);
+        assert_eq!(stack.pop().unwrap(), 0x100);
+
+        pc = 0x1000;
+        addr = 0x1111;
+        assert!(Chip8::call_subroutine(&mut pc, &mut stack, addr).is_err());
+    }
 }
