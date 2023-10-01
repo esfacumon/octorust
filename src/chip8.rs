@@ -43,9 +43,9 @@ impl Chip8 {
         };
         chip8.memory[3] = 0b0000_0001;
 
-        // Clear screen:
-        chip8.memory[4] = 0x00;
-        chip8.memory[5] = 0xE0;
+        // set v[1] = 23:
+        chip8.memory[4] = 0x61;
+        chip8.memory[5] = 0x23;
 
         // JUMP:
         chip8.memory[6] = 0x10;
@@ -276,6 +276,7 @@ impl Chip8 {
         println!("EXE: SET INSTRUCTION");
         if Self::is_valid_register(register) {
             v[register] = value;
+            println!("v[{}] = {} || valor real = {}", register, value, v[1]);
         }
         else {
             // TODO: Handle error (panic?)
