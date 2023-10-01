@@ -3,6 +3,7 @@ use crate::stack::Stack;
 // TODO:  address limits
 pub const MIN_ADDRESS: u16 = 0x001;
 pub const MAX_ADDRESS: u16 = 0xFFF;
+pub const MEMORY_SIZE: usize = 0x1000;
 
 pub const WIDTH: usize = 640;
 pub const HEIGHT: usize = 320;
@@ -13,27 +14,30 @@ pub enum Instruction {
     Jump { addr: u16},
     CallSubroutine { addr: u16},
     ReturnSubroutine,
+    Set { register: usize, value: u8},
     // ...
 }
 
 pub struct Chip8 {
     pub pixel_array: [[bool; WIDTH]; HEIGHT],
-    memory: [u8; 4096],
-    // index: u16,
+    memory: [u8; MEMORY_SIZE],
+    // i: u16, // index register
     pc: u16,
     stack: Stack<u16>,
-    // delay: u8,
-    // sound: u8,
+    // delay_timer: u8,
+    // sound_timer: u8,
+    v: [u8; 16]
 }
 
 impl Chip8 {
     pub fn new() -> Self {
         let mut chip8 = Chip8 {
-            pixel_array: [[false; 640]; 320],
-            memory: [0; 4096],
+            pixel_array: [[false; WIDTH]; HEIGHT],
+            memory: [0; MEMORY_SIZE],
             // index: 0,
             pc: 0,
             stack: Stack::new(),
+            v: [0; 16],
             // delay: 0,
             // sound: 0,
         };
@@ -80,7 +84,6 @@ impl Chip8 {
         println!("fet::INST READ: 0x{:04X}", instruction);
         
         self.pc += 0x02;
-
         
         return instruction;
     }
@@ -105,6 +108,11 @@ impl Chip8 {
                 let addr: u16 = instruction % 0x1000;
                 Instruction::CallSubroutine { addr }
             },
+            0x6 => {
+                let register = Chip8::get_nibble(instruction, 2) as usize;
+                let value: u8 = (instruction % 0x0100) as u8;
+                Instruction::Set { register, value }
+            }
             _ => Instruction::FillScreen
         }
     }
@@ -116,7 +124,8 @@ impl Chip8 {
             Instruction::FillScreen => Chip8::fill_screen(&mut self.pixel_array),
             Instruction::Jump { addr } => Chip8::jump(&mut self.pc, addr),
             Instruction::CallSubroutine { addr } => Chip8::call_subroutine(&mut self.pc, &mut self.stack, addr),
-            Instruction::ReturnSubroutine => Chip8::return_subroutine(&mut self.pc, &mut self.stack)
+            Instruction::ReturnSubroutine => Chip8::return_subroutine(&mut self.pc, &mut self.stack),
+            Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value)
         }
     }
 
@@ -257,6 +266,20 @@ impl Chip8 {
 
         let return_addr = stack.pop().expect("Error: Empty stack");
         *pc = return_addr;
+    }
+
+    pub fn is_valid_register(register: usize) -> bool {
+        register <= 17
+    }
+
+    pub fn set( v: &mut [u8; 16], register: usize, value: u8) {
+        println!("EXE: SET INSTRUCTION");
+        if Self::is_valid_register(register) {
+            v[register] = value;
+        }
+        else {
+            // TODO: Handle error (panic?)
+        }
     }
 
 
