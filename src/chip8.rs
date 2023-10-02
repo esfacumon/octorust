@@ -1,5 +1,5 @@
 use crate::stack::Stack;
-use crate::errors::SubroutineError;
+use crate::errors::{SubroutineError, RegisterError};
 
 // TODO:  address limits
 pub const MIN_ADDRESS: u16 = 0x001;
@@ -281,7 +281,7 @@ impl Chip8 {
         register <= 17
     }
 
-    pub fn set( v: &mut [u8; 16], register: usize, value: u8) {
+    pub fn set(v: &mut [u8; 16], register: usize, value: u8) {
         println!("EXE: SET INSTRUCTION");
         if Self::is_valid_register(register) {
             v[register] = value;
@@ -290,6 +290,18 @@ impl Chip8 {
         else {
             // TODO: Handle error (panic?)
         }
+    }
+
+    /**
+    Add `addend` to `register`. If overflows, it just wraps without any carry register affected
+     */
+    pub fn add(v: &mut [u8; 16], register: usize, addend: u8) -> Result<(), RegisterError>{
+        
+        if !Self::is_valid_register(register) {
+            return Err(RegisterError::InvalidRegister(register as u8));
+        }
+        v[register] = v[register].wrapping_add(addend);
+        Ok(())
     }
 
 
@@ -324,8 +336,22 @@ mod tests {
         assert_eq!(pc, addr);
         assert_eq!(stack.pop().unwrap(), 0x100);
 
+
+        // testing error handling
         pc = 0x1000;
         addr = 0x1111;
         assert!(Chip8::call_subroutine(&mut pc, &mut stack, addr).is_err());
+    }
+
+    #[test]
+    fn test_add() {
+        let mut v: [u8; 16];
+        v = [1; 16];
+
+        let addend = 5;
+
+        assert!(Chip8::add(&mut v, 2, addend).is_ok());
+        assert!(Chip8::add(&mut v, 18, addend).is_err());
+        assert_eq!(v[2], 6);
     }
 }

@@ -4,3 +4,9 @@ pub enum SubroutineError {
     StackOverflow,
     // ...
 }
+
+pub enum RegisterError {
+    InvalidRegister(u8),
+    StackOverflow,
+    // ...
+}
