@@ -16,9 +16,9 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
-const SCALE_FACTOR: u32 = 10;
-const WIDTH: u32 = 64 * SCALE_FACTOR;
-const HEIGHT: u32 = 32 * SCALE_FACTOR;
+// const SCALE_FACTOR: u32 = 10;
+// const WIDTH: u32 = 64 * SCALE_FACTOR;
+// const HEIGHT: u32 = 32 * SCALE_FACTOR;
 
 fn main() {
 
@@ -26,14 +26,16 @@ fn main() {
     let mut chip8 = Chip8::new();
 
     let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
+    // let video_subsystem = sdl_context.video().unwrap();
 
+    /*
     let window = video_subsystem.window("rust-sdl2 demo", WIDTH, HEIGHT)
         .position_centered()
         .build()
         .unwrap();
 
     let mut canvas = window.into_canvas().build().unwrap();
+    */
 
     // canvas.set_draw_color(Color::RGB(255, 0, 0));
     // canvas.clear();
@@ -54,7 +56,7 @@ fn main() {
 
         chip8.cycle();
 
-        render(&chip8, &mut canvas);
+        // render(&chip8, &mut canvas);
 
         ::std::thread::sleep(Duration::new(0, 1_000_000u32 / 60) * 60);
 

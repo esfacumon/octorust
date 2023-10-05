@@ -16,7 +16,7 @@ pub enum Instruction {
     CallSubroutine { addr: u16},
     ReturnSubroutine,
     Set { register: usize, value: u8},
-    // ...
+    Add { register: usize, value: u8},
 }
 
 pub struct Chip8 {
@@ -68,6 +68,14 @@ impl Chip8 {
         chip8.memory[0x504] = 0x00;
         chip8.memory[0x505] = 0xEE;
 
+        // add v[7] += 2:
+        chip8.memory[12] = 0x77;
+        chip8.memory[13] = 0x02;
+        
+        // JUMP:
+        chip8.memory[16] = 0x10;
+        chip8.memory[17] = 0x02;
+
         chip8
     }
 
@@ -113,11 +121,15 @@ impl Chip8 {
                 let register = Chip8::get_nibble(instruction, 2) as usize;
                 let value: u8 = (instruction % 0x0100) as u8;
                 Instruction::Set { register, value }
+            },
+            0x7 => {
+                let register = Chip8::get_nibble(instruction, 2) as usize;
+                let value: u8 = (instruction % 0x0100) as u8;
+                Instruction::Add { register, value }
             }
             _ => Instruction::FillScreen
         }
     }
-
 
     pub fn execute(&mut self, instruction: Instruction) {
         match instruction {
@@ -131,7 +143,8 @@ impl Chip8 {
                 }
             },
             Instruction::ReturnSubroutine => Chip8::return_subroutine(&mut self.pc, &mut self.stack),
-            Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value)
+            Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value),
+            Instruction::Add { register, value } => Chip8::add(&mut self.v, register, value).expect("ADD error"),
         }
     }
 
@@ -244,18 +257,20 @@ impl Chip8 {
     - `addr`: Address to jump
     */
     pub fn jump(pc: &mut u16, addr: u16) {
-        println!("EXE: JUMP INSTRUCTION");
+        println!("EXE: JUMP");
         
         if Self::is_valid_address(addr) {
             *pc = addr;
         }
         else {
-            println!("EXE: INVALID JUMP ADDRESS");
+            // println!("EXE: INVALID JUMP ADDRESS");
+            // TODO: handle this correctly
+            panic!("EXE: INVALID JUMP ADDRESS");
         }
     }
 
     pub fn call_subroutine(pc: &mut u16, stack: &mut Stack<u16>, addr: u16) -> Result<(), SubroutineError> {
-        println!("EXE: CALL INSTRUCTION");
+        println!("EXE: CALL");
 
         if !Self::is_valid_address(addr) {
             return Err(SubroutineError::InvalidAddress(addr));
@@ -271,7 +286,7 @@ impl Chip8 {
     }
 
     pub fn return_subroutine(pc: &mut u16, stack: &mut Stack<u16>) {
-        println!("EXE: RETURN INSTRUCTION");
+        println!("EXE: RETURN");
 
         let return_addr = stack.pop().expect("Error: Empty stack");
         *pc = return_addr;
@@ -282,7 +297,7 @@ impl Chip8 {
     }
 
     pub fn set(v: &mut [u8; 16], register: usize, value: u8) {
-        println!("EXE: SET INSTRUCTION");
+        println!("EXE: SET");
         if Self::is_valid_register(register) {
             v[register] = value;
             println!("v[{}] = {} || valor real = {}", register, value, v[1]);
@@ -296,11 +311,13 @@ impl Chip8 {
     Add `addend` to `register`. If overflows, it just wraps without any carry register affected
      */
     pub fn add(v: &mut [u8; 16], register: usize, addend: u8) -> Result<(), RegisterError>{
-        
+        println!("EXE: ADD");
         if !Self::is_valid_register(register) {
             return Err(RegisterError::InvalidRegister(register as u8));
         }
         v[register] = v[register].wrapping_add(addend);
+        
+        println!("v[{}] = {} || valor real = {}", register, addend, v[register]);
         Ok(())
     }
 
