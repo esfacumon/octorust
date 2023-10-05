@@ -17,12 +17,13 @@ pub enum Instruction {
     ReturnSubroutine,
     Set { register: usize, value: u8},
     Add { register: usize, value: u8},
+    SetI { value: u16 },
 }
 
 pub struct Chip8 {
     pub pixel_array: [[bool; WIDTH]; HEIGHT],
     memory: [u8; MEMORY_SIZE],
-    // i: u16, // index register
+    i: u16, // index register
     pc: u16,
     stack: Stack<u16>,
     // delay_timer: u8,
@@ -35,7 +36,7 @@ impl Chip8 {
         let mut chip8 = Chip8 {
             pixel_array: [[false; WIDTH]; HEIGHT],
             memory: [0; MEMORY_SIZE],
-            // index: 0,
+            i: 0,
             pc: 0,
             stack: Stack::new(),
             v: [0; 16],
@@ -72,9 +73,13 @@ impl Chip8 {
         chip8.memory[12] = 0x77;
         chip8.memory[13] = 0x02;
         
+        // Set I
+        chip8.memory[16] = 0xA0;
+        chip8.memory[17] = 0x11;
+        
         // JUMP:
-        chip8.memory[16] = 0x10;
-        chip8.memory[17] = 0x02;
+        chip8.memory[18] = 0x10;
+        chip8.memory[19] = 0x02;
 
         chip8
     }
@@ -126,7 +131,11 @@ impl Chip8 {
                 let register = Chip8::get_nibble(instruction, 2) as usize;
                 let value: u8 = (instruction % 0x0100) as u8;
                 Instruction::Add { register, value }
-            }
+            },
+            0xA => {
+                let value: u16 = instruction %0x0100;
+                Instruction::SetI { value }
+            },
             _ => Instruction::FillScreen
         }
     }
@@ -145,6 +154,7 @@ impl Chip8 {
             Instruction::ReturnSubroutine => Chip8::return_subroutine(&mut self.pc, &mut self.stack),
             Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value),
             Instruction::Add { register, value } => Chip8::add(&mut self.v, register, value).expect("ADD error"),
+            Instruction::SetI { value } => Chip8::set_i(&mut self.i, value),
         }
     }
 
@@ -322,6 +332,13 @@ impl Chip8 {
     }
 
 
+    fn set_i(i: &mut u16, value: u16) {
+        println!("EXE: ADD_I");
+        *i = value;
+        println!("i({}) = {}", *i, value);
+    }
+
+
     pub fn cycle(&mut self) {
         let instruction = self.fetch();
         let decoded = self.decode(instruction);
@@ -370,5 +387,16 @@ mod tests {
         assert!(Chip8::add(&mut v, 2, addend).is_ok());
         assert!(Chip8::add(&mut v, 18, addend).is_err());
         assert_eq!(v[2], 6);
+    }
+
+    #[test]
+    fn test_set_i() {
+        let mut i: u16 = 0;
+
+        let value: u16 = 5;
+
+        Chip8::set_i(&mut i, 5);
+
+        assert_eq!(i, 5);
     }
 }
