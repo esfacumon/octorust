@@ -6,8 +6,9 @@ pub const MIN_ADDRESS: u16 = 0x001;
 pub const MAX_ADDRESS: u16 = 0xFFF;
 pub const MEMORY_SIZE: usize = 0x1000;
 
-pub const WIDTH: usize = 640;
-pub const HEIGHT: usize = 320;
+pub const WIDTH: usize = 64;
+pub const HEIGHT: usize = 32;
+pub const SCALE_FACTOR: u8 = 10;
 
 pub enum Instruction {
     ClearScreen,
@@ -18,6 +19,7 @@ pub enum Instruction {
     Set { register: usize, value: u8},
     Add { register: usize, value: u8},
     SetI { value: u16 },
+    DisplayDraw { x: u16, y: u16}
 }
 
 pub struct Chip8 {
@@ -46,7 +48,7 @@ impl Chip8 {
         chip8.memory[3] = 0b0000_0001;
 
         // set v[1] = 23:
-        chip8.memory[4] = 0x61;
+        chip8.memory[4] = 0xD2;
         chip8.memory[5] = 0x23;
 
         // JUMP:
@@ -136,6 +138,12 @@ impl Chip8 {
                 let value: u16 = instruction %0x0100;
                 Instruction::SetI { value }
             },
+            0xD => {
+                let x: u16 = Chip8::get_nibble(instruction, 2);
+                let y: u16 = Chip8::get_nibble(instruction, 3);
+                let n: u16 = Chip8::get_nibble(instruction, 4);
+                Instruction::DisplayDraw { x, y }
+            }
             _ => Instruction::FillScreen
         }
     }
@@ -155,6 +163,7 @@ impl Chip8 {
             Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value),
             Instruction::Add { register, value } => Chip8::add(&mut self.v, register, value).expect("ADD error"),
             Instruction::SetI { value } => Chip8::set_i(&mut self.i, value),
+            Instruction::DisplayDraw { x, y } => Chip8::draw_pixel(self, x as usize, y as usize)
         }
     }
 
@@ -233,15 +242,15 @@ impl Chip8 {
     }
 
 
-    pub fn clear_screen(pixel_array: &mut [[bool; 640]; 320]) {
+    pub fn clear_screen(pixel_array: &mut [[bool; WIDTH]; HEIGHT]) {
         println!("EXE: CLEAR SCREEN");
-        *pixel_array = [[false; 640]; 320];
+        *pixel_array = [[false; WIDTH]; HEIGHT];
     }
 
 
-    pub fn fill_screen(pixel_array: &mut [[bool; 640]; 320]) {
+    pub fn fill_screen(pixel_array: &mut [[bool; WIDTH]; HEIGHT]) {
         println!("EXE: FILL SCREEN");
-        *pixel_array = [[true; 640]; 320];
+        *pixel_array = [[true; WIDTH]; HEIGHT];
         
         /*
         for y in 0..159 {
@@ -336,6 +345,36 @@ impl Chip8 {
         println!("EXE: ADD_I");
         *i = value;
         println!("i({}) = {}", *i, value);
+    }
+
+    fn draw_pixel(&mut self, register_x: usize, register_y: usize) {
+        println!("EXE: DRAW PIXEL");
+        let x: usize = (self.v[register_x] as usize) % WIDTH;
+        let y: usize = (self.v[register_y] as usize) % HEIGHT;
+
+        // self.v[0xF] = 0;
+
+        self.pixel_array[10][11] = true;
+        
+        self.pixel_array[10][15] = true;
+        self.pixel_array[10][25] = true;
+    }
+
+    fn display(&mut self, register_x: usize, register_y: usize, n: u8) {
+        let x: usize = (self.v[register_x] as usize) % 64;
+        let y: usize = (self.v[register_y] as usize) % 32;
+
+        self.v[0xF] = 0;
+
+        for height in 0..n {
+            let sprite: u8 = self.memory[(self.i + n as u16) as usize];
+            for i in 8..0 {
+                let bit = (sprite >> i) & 1; // get most significant bits first.
+                
+            }
+        }
+
+        self.pixel_array[x][y] = true;
     }
 
 
