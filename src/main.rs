@@ -16,16 +16,19 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
- const SCALE_FACTOR: u32 = 1;
- const WIDTH: u32 = 64 * SCALE_FACTOR;
- const HEIGHT: u32 = 32 * SCALE_FACTOR;
+const CHIP8_WIDTH: u32 = 64;
+const CHIP8_HEIGHT: u32 = 32;
+const SCALE_FACTOR: u32 = 38;
+const PADDING: u32 = SCALE_FACTOR/4;
+const WIDTH: u32 = CHIP8_WIDTH * SCALE_FACTOR;
+const HEIGHT: u32  = CHIP8_HEIGHT * SCALE_FACTOR;
 
 fn main() {
 
     let mut chip8 = Chip8::new();
 
     let sdl_context = sdl2::init().expect("Init SDL2 error");
-     let video_subsystem = sdl_context.video().expect("Init video subsystem error");
+    let video_subsystem = sdl_context.video().expect("Init video subsystem error");
 
     let window = video_subsystem.window("rust-sdl2 demo", WIDTH, HEIGHT)
         .position_centered()
@@ -43,8 +46,6 @@ fn main() {
 
     // let mut i = 0;
     'running: loop {
-        
-        println!("hola en el loop");
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
@@ -59,7 +60,7 @@ fn main() {
 
         render(&chip8, &mut canvas);
 
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60) * 60);
+        // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60) * 60);
 
     }
 }
@@ -83,11 +84,11 @@ fn render(chip8: &Chip8, canvas: &mut sdl2::render::Canvas<sdl2::video::Window>)
 
             canvas.set_draw_color(color);
             
-            let rect = Rect::new(x as i32, y as i32, 10, 10); // TODO: adapt pixel size
-            canvas.fill_rect(rect).expect("Error rendering pixel");
 
+            // draw pixel on canvas
+            let rect = Rect::new(PADDING as i32 + (x as i32 * SCALE_FACTOR as i32), PADDING as i32 + (y as i32 * SCALE_FACTOR as i32), SCALE_FACTOR - PADDING, SCALE_FACTOR - PADDING);
+            canvas.fill_rect(rect).expect("Error rendering pixel");
         }
     }
- 
     canvas.present();
 }

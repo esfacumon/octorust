@@ -1,5 +1,8 @@
+use crate::{CHIP8_HEIGHT, CHIP8_WIDTH};
 use crate::stack::Stack;
-use crate::errors::{SubroutineError, RegisterError};
+use crate::errors::{SubroutineError, RegisterError, RomError};
+use std::fs::File;
+use std::io::Read;
 
 // TODO:  address limits
 pub const MIN_ADDRESS: u16 = 0x001;
@@ -19,7 +22,7 @@ pub enum Instruction {
     Set { register: usize, value: u8},
     Add { register: usize, value: u8},
     SetI { value: u16 },
-    DisplayDraw { x: u16, y: u16}
+    DisplayDraw { x: u16, y: u16, n: u16}
 }
 
 pub struct Chip8 {
@@ -39,50 +42,52 @@ impl Chip8 {
             pixel_array: [[false; WIDTH]; HEIGHT],
             memory: [0; MEMORY_SIZE],
             i: 0,
-            pc: 0,
+            pc: 0x200,
             stack: Stack::new(),
             v: [0; 16],
             // delay: 0,
             // sound: 0,
         };
-        chip8.memory[3] = 0b0000_0001;
+        // chip8.memory[3] = 0b0000_0001;
 
-        // set v[1] = 23:
-        chip8.memory[4] = 0xD2;
-        chip8.memory[5] = 0x23;
+        // // draw:
+        // chip8.memory[4] = 0xD2;
+        // chip8.memory[5] = 0x23;
 
-        // JUMP:
-        chip8.memory[6] = 0x10;
-        chip8.memory[7] = 0x0A;
+        // // JUMP:
+        // chip8.memory[6] = 0x10;
+        // chip8.memory[7] = 0x0A;
 
-        // SUBROUTINE CALL
-        chip8.memory[10] = 0x22;
-        chip8.memory[11] = 0x00;
+        // // SUBROUTINE CALL
+        // chip8.memory[10] = 0x22;
+        // chip8.memory[11] = 0x00;
 
-        // SUBROUTINE RETURN
-        chip8.memory[0x20A] = 0x00;
-        chip8.memory[0x20B] = 0xEE;
+        // // SUBROUTINE RETURN
+        // chip8.memory[0x20A] = 0x00;
+        // chip8.memory[0x20B] = 0xEE;
 
-        // inner subroutine call
-        chip8.memory[518] = 0x25;
-        chip8.memory[519] = 0x00;
+        // // inner subroutine call
+        // chip8.memory[518] = 0x25;
+        // chip8.memory[519] = 0x00;
         
-        // inner return
-        chip8.memory[0x504] = 0x00;
-        chip8.memory[0x505] = 0xEE;
+        // // inner return
+        // chip8.memory[0x504] = 0x00;
+        // chip8.memory[0x505] = 0xEE;
 
-        // add v[7] += 2:
-        chip8.memory[12] = 0x77;
-        chip8.memory[13] = 0x02;
+        // // add v[7] += 2:
+        // chip8.memory[12] = 0x77;
+        // chip8.memory[13] = 0x02;
         
-        // Set I
-        chip8.memory[16] = 0xA0;
-        chip8.memory[17] = 0x11;
+        // // Set I
+        // chip8.memory[16] = 0xA0;
+        // chip8.memory[17] = 0x11;
         
-        // JUMP:
-        chip8.memory[18] = 0x10;
-        chip8.memory[19] = 0x02;
+        // // JUMP:
+        // chip8.memory[18] = 0x10;
+        // chip8.memory[19] = 0x02;
 
+        chip8.load_font();
+        chip8.load_rom("/workspaces/rust/octorust/roms/IBMLogo.ch8", 0x200).expect("Failed loading rom");
         chip8
     }
 
@@ -113,7 +118,7 @@ impl Chip8 {
                 match instruction {
                     0x00E0 =>  Instruction::ClearScreen,
                     0x00EE => Instruction::ReturnSubroutine,
-                    _ => Instruction::FillScreen,
+                    _ => Instruction::ClearScreen,
                 }
             },
             0x1 => {
@@ -142,7 +147,7 @@ impl Chip8 {
                 let x: u16 = Chip8::get_nibble(instruction, 2);
                 let y: u16 = Chip8::get_nibble(instruction, 3);
                 let n: u16 = Chip8::get_nibble(instruction, 4);
-                Instruction::DisplayDraw { x, y }
+                Instruction::DisplayDraw { x, y, n }
             }
             _ => Instruction::FillScreen
         }
@@ -163,8 +168,52 @@ impl Chip8 {
             Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value),
             Instruction::Add { register, value } => Chip8::add(&mut self.v, register, value).expect("ADD error"),
             Instruction::SetI { value } => Chip8::set_i(&mut self.i, value),
-            Instruction::DisplayDraw { x, y } => Chip8::draw_pixel(self, x as usize, y as usize)
+            Instruction::DisplayDraw { x, y, n } => Chip8::display(self, x as usize, y as usize, n as u8)
         }
+    }
+
+    fn load_font(&mut self) {
+        let font: [u8; 80] = [
+            0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+            0x20, 0x60, 0x20, 0x20, 0x70, // 1
+            0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+            0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+            0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+            0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+            0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+            0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+            0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+            0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+            0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+            0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+            0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+            0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+            0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+            0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+        ];
+        for i in 0..font.len() {
+            self.memory[i] = font[i];
+        }
+    }
+
+    fn load_rom(&mut self, path: &str, start_address: usize) -> std::io::Result<()>{
+        let mut rom_file = File::open(path)?;
+        let mut rom_buffer = Vec::new();
+        
+        rom_file.read_to_end(&mut rom_buffer)?;
+
+        if start_address + rom_buffer.len() > self.memory.len() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "ROM exceeds memory",
+            ));
+        }
+
+        for (i, &byte) in rom_buffer.iter().enumerate() {
+            self.memory[start_address + i] = byte;
+        }
+
+        Ok(())
     }
 
     /**
@@ -347,34 +396,35 @@ impl Chip8 {
         println!("i({}) = {}", *i, value);
     }
 
-    fn draw_pixel(&mut self, register_x: usize, register_y: usize) {
-        println!("EXE: DRAW PIXEL");
-        let x: usize = (self.v[register_x] as usize) % WIDTH;
-        let y: usize = (self.v[register_y] as usize) % HEIGHT;
-
-        // self.v[0xF] = 0;
-
-        self.pixel_array[10][11] = true;
-        
-        self.pixel_array[10][15] = true;
-        self.pixel_array[10][25] = true;
-    }
-
     fn display(&mut self, register_x: usize, register_y: usize, n: u8) {
-        let x: usize = (self.v[register_x] as usize) % 64;
-        let y: usize = (self.v[register_y] as usize) % 32;
+        let x: usize = (self.v[register_x] as usize) % CHIP8_WIDTH as usize;
+        let y: usize = (self.v[register_y] as usize) % CHIP8_HEIGHT as usize;
 
         self.v[0xF] = 0;
 
-        for height in 0..n {
-            let sprite: u8 = self.memory[(self.i + n as u16) as usize];
-            for i in 8..0 {
-                let bit = (sprite >> i) & 1; // get most significant bits first.
-                
+        for row in 0..n {
+            let sprite_row: u8 = self.memory[(self.i + row as u16) as usize];
+            
+            let mut pixel_row: u8 = 0;
+            // convert pixel array row to u8 var
+            for i in 0..8 {
+                if self.pixel_array[y + row as usize][x + i as usize] {
+                    pixel_row |= 1 << (7 - i);
+                }
+            }
+
+            let final_pixel_row: u8 = pixel_row ^ sprite_row;
+
+            if (final_pixel_row & pixel_row) > 0 {
+                self.v[0xF] = 1;
+            }
+
+            for i in 0..8 {
+                if (x + i) < CHIP8_WIDTH as usize && (y + row as usize) < CHIP8_HEIGHT as usize {
+                    self.pixel_array[y + row as usize][x + i] = ((final_pixel_row >> (7 - i)) & 0000_0001) == 1;
+                }
             }
         }
-
-        self.pixel_array[x][y] = true;
     }
 
 
