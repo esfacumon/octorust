@@ -9,6 +9,11 @@ pub const MIN_ADDRESS: u16 = 0x001;
 pub const MAX_ADDRESS: u16 = 0xFFF;
 pub const MEMORY_SIZE: usize = 0x1000;
 
+
+pub const FONT_OFFSET: u16 = 0x050;
+pub const ROM_OFFSET: u16 = 0x200;
+
+
 pub const WIDTH: usize = 64;
 pub const HEIGHT: usize = 32;
 pub const SCALE_FACTOR: u8 = 10;
@@ -22,7 +27,7 @@ pub enum Instruction {
     Set { register: usize, value: u8},
     Add { register: usize, value: u8},
     SetI { value: u16 },
-    DisplayDraw { x: u16, y: u16, n: u16}
+    DisplayDraw { x: u16, y: u16, n: u16},
 }
 
 pub struct Chip8 {
@@ -42,52 +47,15 @@ impl Chip8 {
             pixel_array: [[false; WIDTH]; HEIGHT],
             memory: [0; MEMORY_SIZE],
             i: 0,
-            pc: 0x200,
+            pc: ROM_OFFSET,
             stack: Stack::new(),
             v: [0; 16],
             // delay: 0,
             // sound: 0,
         };
-        // chip8.memory[3] = 0b0000_0001;
-
-        // // draw:
-        // chip8.memory[4] = 0xD2;
-        // chip8.memory[5] = 0x23;
-
-        // // JUMP:
-        // chip8.memory[6] = 0x10;
-        // chip8.memory[7] = 0x0A;
-
-        // // SUBROUTINE CALL
-        // chip8.memory[10] = 0x22;
-        // chip8.memory[11] = 0x00;
-
-        // // SUBROUTINE RETURN
-        // chip8.memory[0x20A] = 0x00;
-        // chip8.memory[0x20B] = 0xEE;
-
-        // // inner subroutine call
-        // chip8.memory[518] = 0x25;
-        // chip8.memory[519] = 0x00;
-        
-        // // inner return
-        // chip8.memory[0x504] = 0x00;
-        // chip8.memory[0x505] = 0xEE;
-
-        // // add v[7] += 2:
-        // chip8.memory[12] = 0x77;
-        // chip8.memory[13] = 0x02;
-        
-        // // Set I
-        // chip8.memory[16] = 0xA0;
-        // chip8.memory[17] = 0x11;
-        
-        // // JUMP:
-        // chip8.memory[18] = 0x10;
-        // chip8.memory[19] = 0x02;
 
         chip8.load_font();
-        chip8.load_rom("/workspaces/rust/octorust/roms/IBMLogo.ch8", 0x200).expect("Failed loading rom");
+        chip8.load_rom("/workspaces/rust/octorust/roms/IBMLogo.ch8").expect("Failed loading rom");
         chip8
     }
 
@@ -140,7 +108,7 @@ impl Chip8 {
                 Instruction::Add { register, value }
             },
             0xA => {
-                let value: u16 = instruction %0x0100;
+                let value: u16 = instruction % 0x1000;
                 Instruction::SetI { value }
             },
             0xD => {
@@ -149,7 +117,7 @@ impl Chip8 {
                 let n: u16 = Chip8::get_nibble(instruction, 4);
                 Instruction::DisplayDraw { x, y, n }
             }
-            _ => Instruction::FillScreen
+            _ => Instruction::ClearScreen
         }
     }
 
@@ -168,7 +136,7 @@ impl Chip8 {
             Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value),
             Instruction::Add { register, value } => Chip8::add(&mut self.v, register, value).expect("ADD error"),
             Instruction::SetI { value } => Chip8::set_i(&mut self.i, value),
-            Instruction::DisplayDraw { x, y, n } => Chip8::display(self, x as usize, y as usize, n as u8)
+            Instruction::DisplayDraw { x, y, n } => Chip8::display(self, x as usize, y as usize, n as u8),
         }
     }
 
@@ -192,17 +160,17 @@ impl Chip8 {
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         ];
         for i in 0..font.len() {
-            self.memory[i] = font[i];
+            self.memory[i + FONT_OFFSET as usize] = font[i];
         }
     }
 
-    fn load_rom(&mut self, path: &str, start_address: usize) -> std::io::Result<()>{
+    fn load_rom(&mut self, path: &str) -> std::io::Result<()>{
         let mut rom_file = File::open(path)?;
         let mut rom_buffer = Vec::new();
         
         rom_file.read_to_end(&mut rom_buffer)?;
 
-        if start_address + rom_buffer.len() > self.memory.len() {
+        if ROM_OFFSET as usize + rom_buffer.len() > self.memory.len() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 "ROM exceeds memory",
@@ -210,7 +178,7 @@ impl Chip8 {
         }
 
         for (i, &byte) in rom_buffer.iter().enumerate() {
-            self.memory[start_address + i] = byte;
+            self.memory[ROM_OFFSET as usize + i] = byte;
         }
 
         Ok(())
@@ -300,14 +268,6 @@ impl Chip8 {
     pub fn fill_screen(pixel_array: &mut [[bool; WIDTH]; HEIGHT]) {
         println!("EXE: FILL SCREEN");
         *pixel_array = [[true; WIDTH]; HEIGHT];
-        
-        /*
-        for y in 0..159 {
-            for x in 0..640{
-                pixel_array[y][x] = true;
-            }
-        }
-        */
     }
  
 
@@ -331,9 +291,8 @@ impl Chip8 {
             *pc = addr;
         }
         else {
-            // println!("EXE: INVALID JUMP ADDRESS");
             // TODO: handle this correctly
-            panic!("EXE: INVALID JUMP ADDRESS");
+            panic!("JUMP: INVALID JUMP ADDRESS");
         }
     }
 
@@ -348,7 +307,7 @@ impl Chip8 {
             return Err(SubroutineError::StackOverflow);
         }
 
-        println!("STACK LENGTH: {:?}", stack.len());
+        println!("\tSTACK LENGTH: {:?}", stack.len());
         *pc = addr;
         Ok(())
     }
@@ -368,10 +327,11 @@ impl Chip8 {
         println!("EXE: SET");
         if Self::is_valid_register(register) {
             v[register] = value;
-            println!("v[{}] = {} || valor real = {}", register, value, v[1]);
+            println!("v[{}] = {} || valor real = {}", register, value, v[register]);
         }
         else {
-            // TODO: Handle error (panic?)
+            // TODO: Handle error
+            panic!("SET: INVALID REGISTER");
         }
     }
 
@@ -385,7 +345,7 @@ impl Chip8 {
         }
         v[register] = v[register].wrapping_add(addend);
         
-        println!("v[{}] = {} || valor real = {}", register, addend, v[register]);
+        println!("\t(+ADDED)v[{}] = (+{}){}", register, addend, v[register]);
         Ok(())
     }
 
@@ -397,9 +357,10 @@ impl Chip8 {
     }
 
     fn display(&mut self, register_x: usize, register_y: usize, n: u8) {
+        println!("EXE: DISPLAY");
         let x: usize = (self.v[register_x] as usize) % CHIP8_WIDTH as usize;
         let y: usize = (self.v[register_y] as usize) % CHIP8_HEIGHT as usize;
-
+        println!("\tCOORDINATES: n={}, v[{}]=x={}, v[{}]=y={}", n, register_x, x, register_y, y);
         self.v[0xF] = 0;
 
         for row in 0..n {
@@ -415,12 +376,14 @@ impl Chip8 {
 
             let final_pixel_row: u8 = pixel_row ^ sprite_row;
 
-            if (final_pixel_row & pixel_row) > 0 {
+            if (sprite_row & pixel_row) != 0000_0000 {
                 self.v[0xF] = 1;
             }
 
             for i in 0..8 {
-                if (x + i) < CHIP8_WIDTH as usize && (y + row as usize) < CHIP8_HEIGHT as usize {
+                if (x + i) < CHIP8_WIDTH as usize &&
+                        (y + row as usize) < CHIP8_HEIGHT as usize &&
+                        final_pixel_row != pixel_row {
                     self.pixel_array[y + row as usize][x + i] = ((final_pixel_row >> (7 - i)) & 0000_0001) == 1;
                 }
             }
@@ -470,7 +433,6 @@ mod tests {
     fn test_add() {
         let mut v: [u8; 16];
         v = [1; 16];
-
         let addend = 5;
 
         assert!(Chip8::add(&mut v, 2, addend).is_ok());
@@ -481,10 +443,9 @@ mod tests {
     #[test]
     fn test_set_i() {
         let mut i: u16 = 0;
-
         let value: u16 = 5;
 
-        Chip8::set_i(&mut i, 5);
+        Chip8::set_i(&mut i, value);
 
         assert_eq!(i, 5);
     }

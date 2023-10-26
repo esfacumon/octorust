@@ -12,39 +12,49 @@
 
 This project is in its early stages but aims to provide a solid foundation for CHIP-8 emulation.
 
-### Basic instructions:
+### Basic instructions
+
+This instructions are needed to run the most basic ROM available for Chip8, which displays IBM Logo on screen
 
   | Status   | Code   | Instruction |
   |:--------:|:------:|-------------| 
   | ✅       | `00E0` | clear screen |
   | ✅       | `1NNN` | jump |
-  | ✅       | `2NNN` | subroutine call |
-  | ✅       | `00EE` | subroutine return |
   | ✅       | `6XNN` | set register VX |
   | ✅       | `7XNN` | add value to register VX |
   | ✅       | `ANNN` | set index register I
-  | ⌛       | `DXYN` | display/draw
-    
-  Notes on display/draw: X and Y are the register index which store the coordinates to draw, X and Y respectively. N is the position of the sprite to write, starting from the position stored in register I (index).
-  A pixel switch its value (from 0 to 1 or viceversa) if and only if sprite bit is 1. Otherwise, it stays on its original value.
-  This instruction also writes on register `v[0xF]`, a value of 1 if the sprite switched a pixel array from 1 to 0. Otherwise, `V[0xF]` is set to 0. The resultant truth table is the following:
-
-  | P0 | Sprite bit | PF | V[0xF] |
-  |----|------------|---:|-------:|
-  | 0  | 0          | 0  | 0      |
-  | 0  | 1          | 1  | 0      |
-  | 1  | 0          | 1  | 0      |
-  | 1  | 1          | 0  | 1      |
-
-  `P0` is the original pixel value and `PF` is the pixel value after applying its sprite bit.
-
-  Which means that:
-  `PF = P0 ⊕ Sprite bit`
-  `V[0xF] = P0 & Sprite bit`
+  | ✅       | `DXYN` | display/draw
   
-### Rest of instructions:
-  🔜
-### Input handling:
+### Rest of instructions
+  | Status    | Code   | Instruction |
+  |:---------:|:------:|-------------| 
+  | ✅        | `2NNN` | subroutine call |
+  | ✅        | `00EE` | subroutine return |
+  |⌛         |`3XNN`| Skip
+  |⌛         |`4XNN`| Skip
+  |⌛         |`5XY0`| Skip
+  |⌛         |`9XY0`| Skip
+  |🔜         |`8XY1`| Binary OR
+  |🔜         |`8XY2`| Binary AND
+  |🔜         |`8XY3`| Logical XOR
+  |🔜         |`8XY4`| Add VX
+  |🔜         |`8XY5`| Substract VX=VX-VY
+  |🔜         |`8XY7`| Substract VX=VY-VX
+  |🔜         |`8XY6`| Shift
+  |🔜         |`8XYE`| Shift
+  |🔜         |`BNNN`| Jump with offset
+  |🔜         |`CXNN`| Random
+  |🔜         |`EX9E`| Skip if
+  |🔜         |`EXA1`| Skip if
+  |🔜         |`FX07`, `FX15` and `FX18`| Timers
+  |🔜         |`FX1E`| Add index register I
+  |🔜         |`FX0A`| Get key (on key up, beeps while pressed down)
+  |🔜         |`FX29`| Font char
+  |🔜         |`FX33`| Binary-coded decimal conversion
+  |🔜         |`FX55`| Store
+  |🔜         |`FX65`| Load
+
+### Input handling
   🔜
 
 ## Thank you! 💕

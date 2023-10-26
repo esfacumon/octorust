@@ -7,6 +7,7 @@ doc/
  
 # Logs
 *.log
+*.lock
 
 # System files
 .DS_Store

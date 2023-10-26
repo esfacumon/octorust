@@ -18,13 +18,16 @@ use sdl2::keyboard::Keycode;
 
 const CHIP8_WIDTH: u32 = 64;
 const CHIP8_HEIGHT: u32 = 32;
-const SCALE_FACTOR: u32 = 38;
-const PADDING: u32 = SCALE_FACTOR/4;
+const SCALE_FACTOR: u32 = 20;
+const PADDING: u32 = SCALE_FACTOR/8;
 const WIDTH: u32 = CHIP8_WIDTH * SCALE_FACTOR;
 const HEIGHT: u32  = CHIP8_HEIGHT * SCALE_FACTOR;
 
 fn main() {
-
+    println!("Octorust  Copyright (C) 2023  Facundo A.
+    This program comes with ABSOLUTELY NO WARRANTY.
+    This is free software, and you are welcome to redistribute it
+    under certain conditions.");
     let mut chip8 = Chip8::new();
 
     let sdl_context = sdl2::init().expect("Init SDL2 error");
@@ -45,7 +48,7 @@ fn main() {
     let mut event_pump = sdl_context.event_pump().expect("Event pump error");
 
     // let mut i = 0;
-    'running: loop {
+    loop {
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
@@ -60,8 +63,7 @@ fn main() {
 
         render(&chip8, &mut canvas);
 
-        // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60) * 60);
-
+        ::std::thread::sleep(Duration::new(0, 1_000_000u32 / 60) * 60);
     }
 }
 
