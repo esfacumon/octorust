@@ -8,10 +8,4 @@ pub enum SubroutineError {
 #[derive(Debug)]
 pub enum RegisterError {
     InvalidRegister(u8),
-    StackOverflow,
-}
-
-#[derive(Debug)]
-pub enum RomError {
-    ReadError,
 }

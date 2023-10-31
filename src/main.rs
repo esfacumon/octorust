@@ -1,14 +1,11 @@
-mod stack;
-
 mod chip8;
-pub mod errors;
-use chip8::Chip8;
+
+use chip8::chip8::Chip8;
+
 use sdl2::rect::Rect;
 
-// use std::{thread, time};
 use std::time::Duration;
 
-// use rusttype::Rect;
 
 extern crate sdl2;
 
@@ -16,12 +13,16 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
-const CHIP8_WIDTH: u32 = 64;
-const CHIP8_HEIGHT: u32 = 32;
-const SCALE_FACTOR: u32 = 20;
-const PADDING: u32 = SCALE_FACTOR/8;
-const WIDTH: u32 = CHIP8_WIDTH * SCALE_FACTOR;
-const HEIGHT: u32  = CHIP8_HEIGHT * SCALE_FACTOR;
+
+use chip8::constants::{
+    WIDTH,
+    HEIGHT,
+    SCALE_FACTOR,
+    PADDING,
+};
+
+const SCREEN_WIDTH: u32 = (WIDTH * SCALE_FACTOR as usize) as u32;
+const SCREEN_HEIGHT: u32  = (HEIGHT * SCALE_FACTOR as usize) as u32;
 
 fn main() {
     println!("Octorust  Copyright (C) 2023  Facundo A.
@@ -33,7 +34,7 @@ fn main() {
     let sdl_context = sdl2::init().expect("Init SDL2 error");
     let video_subsystem = sdl_context.video().expect("Init video subsystem error");
 
-    let window = video_subsystem.window("rust-sdl2 demo", WIDTH, HEIGHT)
+    let window = video_subsystem.window("rust-sdl2 demo", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
         .build()
         .expect("Window init error");
@@ -41,13 +42,9 @@ fn main() {
     let mut canvas = window.into_canvas().build()
             .expect("Canvas build error");
 
-    // canvas.set_draw_color(Color::RGB(255, 0, 0));
-    // canvas.clear();
-    // canvas.present();
 
     let mut event_pump = sdl_context.event_pump().expect("Event pump error");
 
-    // let mut i = 0;
     loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -85,10 +82,12 @@ fn render(chip8: &Chip8, canvas: &mut sdl2::render::Canvas<sdl2::video::Window>)
             };
 
             canvas.set_draw_color(color);
-            
 
-            // draw pixel on canvas
-            let rect = Rect::new(PADDING as i32 + (x as i32 * SCALE_FACTOR as i32), PADDING as i32 + (y as i32 * SCALE_FACTOR as i32), SCALE_FACTOR - PADDING, SCALE_FACTOR - PADDING);
+            let rect = Rect::new(
+                PADDING as i32 + (x as i32 * SCALE_FACTOR as i32),
+                PADDING as i32 + (y as i32 * SCALE_FACTOR as i32),
+                (SCALE_FACTOR - PADDING) as u32,
+                (SCALE_FACTOR - PADDING) as u32);
             canvas.fill_rect(rect).expect("Error rendering pixel");
         }
     }

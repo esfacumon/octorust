@@ -1,34 +1,22 @@
-use crate::{CHIP8_HEIGHT, CHIP8_WIDTH};
-use crate::stack::Stack;
-use crate::errors::{SubroutineError, RegisterError, RomError};
+use crate::chip8::instruction::Instruction;
+use crate::chip8::util::get_nibble;
+use crate::chip8::stack::Stack;
+
+use crate::chip8::constants::{
+    MIN_ADDRESS,
+    MAX_ADDRESS,
+    MEMORY_SIZE,
+    FONT_OFFSET,
+    ROM_OFFSET,
+    WIDTH,
+    HEIGHT
+};
+
+
+use crate::chip8::errors::{SubroutineError, RegisterError};
+
 use std::fs::File;
 use std::io::Read;
-
-// TODO:  address limits
-pub const MIN_ADDRESS: u16 = 0x001;
-pub const MAX_ADDRESS: u16 = 0xFFF;
-pub const MEMORY_SIZE: usize = 0x1000;
-
-
-pub const FONT_OFFSET: u16 = 0x050;
-pub const ROM_OFFSET: u16 = 0x200;
-
-
-pub const WIDTH: usize = 64;
-pub const HEIGHT: usize = 32;
-pub const SCALE_FACTOR: u8 = 10;
-
-pub enum Instruction {
-    ClearScreen,
-    FillScreen,
-    Jump { addr: u16},
-    CallSubroutine { addr: u16},
-    ReturnSubroutine,
-    Set { register: usize, value: u8},
-    Add { register: usize, value: u8},
-    SetI { value: u16 },
-    DisplayDraw { x: u16, y: u16, n: u16},
-}
 
 pub struct Chip8 {
     pub pixel_array: [[bool; WIDTH]; HEIGHT],
@@ -79,7 +67,7 @@ impl Chip8 {
 
 
     pub fn decode(&mut self, instruction: u16) -> Instruction {
-        let first_nibble = Chip8::get_nibble(instruction, 1);
+        let first_nibble = get_nibble(instruction, 1);
 
         match first_nibble {
             0x0 => {
@@ -98,12 +86,12 @@ impl Chip8 {
                 Instruction::CallSubroutine { addr }
             },
             0x6 => {
-                let register = Chip8::get_nibble(instruction, 2) as usize;
+                let register = get_nibble(instruction, 2) as usize;
                 let value: u8 = (instruction % 0x0100) as u8;
                 Instruction::Set { register, value }
             },
             0x7 => {
-                let register = Chip8::get_nibble(instruction, 2) as usize;
+                let register = get_nibble(instruction, 2) as usize;
                 let value: u8 = (instruction % 0x0100) as u8;
                 Instruction::Add { register, value }
             },
@@ -112,9 +100,9 @@ impl Chip8 {
                 Instruction::SetI { value }
             },
             0xD => {
-                let x: u16 = Chip8::get_nibble(instruction, 2);
-                let y: u16 = Chip8::get_nibble(instruction, 3);
-                let n: u16 = Chip8::get_nibble(instruction, 4);
+                let x: u16 = get_nibble(instruction, 2);
+                let y: u16 = get_nibble(instruction, 3);
+                let n: u16 = get_nibble(instruction, 4);
                 Instruction::DisplayDraw { x, y, n }
             }
             _ => Instruction::ClearScreen
@@ -213,52 +201,6 @@ impl Chip8 {
     }
 
 
-    /**
-    Returns a specific 4-bit nibble (half-byte) from a 16-bit address.
-
-    # Parameters
-
-    - `addr`: The memory address from which to extract the nibble.
-    - `nibble_number`: The position of the desired nibble. Ranges from 1 to 4.
-
-    # Returns
-
-    Returns the desired 4-bit nibble from the 16-bit memory address.
-
-    If an invalid `nibble_number` is provided (not in the range 1-4), the function returns 0.
-    
-    # Example
-
-    ```rust
-    let addr: u16 = 0xABCD;
-    let nibble = get_nibble(addr, 1);  // Should return 0xA
-    ```
-
-    # Note
-    
-    The nibble positions are as follows for a 16-bit address:
-    * 1: Bits 15-12
-    * 2: Bits 11-8
-    * 3: Bits 7-4
-    * 4: Bits 3-0
-
-    # TODO
-
-    - Handle invalid `nibble_number` inputs more gracefully, possibly with an error message or custom error type.
-    */
-    pub fn get_nibble(addr: u16, nibble_number: u8) -> u16 {
-        let bit_mask: u16;
-        match nibble_number {
-            1 => bit_mask = 0b1111_0000_0000_0000,
-            2 => bit_mask = 0b0000_1111_0000_0000,
-            3 => bit_mask = 0b0000_0000_1111_0000,
-            4 => bit_mask = 0b0000_0000_0000_1111,
-            _ => bit_mask = 0,
-        }
-        (addr & bit_mask) >> 12 - (4 * (nibble_number - 1))
-    }
-
-
     pub fn clear_screen(pixel_array: &mut [[bool; WIDTH]; HEIGHT]) {
         println!("EXE: CLEAR SCREEN");
         *pixel_array = [[false; WIDTH]; HEIGHT];
@@ -275,6 +217,15 @@ impl Chip8 {
         addr >= MIN_ADDRESS && addr <= MAX_ADDRESS
     }
 
+    pub fn cycle(&mut self) {
+        let instruction = self.fetch();
+        let decoded = self.decode(instruction);
+        self.execute(decoded);
+    }
+}
+
+impl Chip8 {
+    // Instruction methods
 
     /**
     Makes PC point to given address
@@ -358,8 +309,8 @@ impl Chip8 {
 
     fn display(&mut self, register_x: usize, register_y: usize, n: u8) {
         println!("EXE: DISPLAY");
-        let x: usize = (self.v[register_x] as usize) % CHIP8_WIDTH as usize;
-        let y: usize = (self.v[register_y] as usize) % CHIP8_HEIGHT as usize;
+        let x: usize = (self.v[register_x] as usize) % WIDTH as usize;
+        let y: usize = (self.v[register_y] as usize) % HEIGHT as usize;
         println!("\tCOORDINATES: n={}, v[{}]=x={}, v[{}]=y={}", n, register_x, x, register_y, y);
         self.v[0xF] = 0;
 
@@ -381,22 +332,14 @@ impl Chip8 {
             }
 
             for i in 0..8 {
-                if (x + i) < CHIP8_WIDTH as usize &&
-                        (y + row as usize) < CHIP8_HEIGHT as usize &&
+                if (x + i) < WIDTH as usize &&
+                        (y + row as usize) < HEIGHT as usize &&
                         final_pixel_row != pixel_row {
                     self.pixel_array[y + row as usize][x + i] = ((final_pixel_row >> (7 - i)) & 0000_0001) == 1;
                 }
             }
         }
     }
-
-
-    pub fn cycle(&mut self) {
-        let instruction = self.fetch();
-        let decoded = self.decode(instruction);
-        self.execute(decoded);
-    }
-
 }
 
 #[cfg(test)]
@@ -406,10 +349,10 @@ mod tests {
     #[test]
     fn test_get_nibble() {
         let instruction: u16 = 0x1234;
-        assert_eq!(Chip8::get_nibble(instruction, 1), 0x1);
-        assert_eq!(Chip8::get_nibble(instruction, 2), 0x2);
-        assert_eq!(Chip8::get_nibble(instruction, 3), 0x3);
-        assert_eq!(Chip8::get_nibble(instruction, 4), 0x4);
+        assert_eq!(get_nibble(instruction, 1), 0x1);
+        assert_eq!(get_nibble(instruction, 2), 0x2);
+        assert_eq!(get_nibble(instruction, 3), 0x3);
+        assert_eq!(get_nibble(instruction, 4), 0x4);
     }
 
     #[test]
