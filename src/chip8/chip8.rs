@@ -340,6 +340,31 @@ impl Chip8 {
             }
         }
     }
+
+    fn binary_or_vx(&mut self, register_x: usize, register_y: usize) {
+        self.v[register_x] = self.v[register_x] | self.v[register_y];
+    }
+
+    fn binary_and_vx(&mut self, register_x: usize, register_y: usize) {
+        self.v[register_x] = self.v[register_x] & self.v[register_y];
+    }
+
+    fn binary_xor_vx(&mut self, register_x: usize, register_y: usize) {
+        self.v[register_x] = self.v[register_x] ^ self.v[register_y];
+    }
+
+    fn add_vx(&mut self, register_x: usize, register_y: usize) {
+        if self.v[register_x].checked_add(self.v[register_x]) == None {
+            self.v[0xF] = 1
+        }
+        else {
+            self.v[0xF] = 0;
+        }
+        self.v[register_x] = self.v[register_x].wrapping_add(self.v[register_y]);
+    }
+
+
+
 }
 
 #[cfg(test)]
