@@ -281,6 +281,7 @@ impl Chip8 {
         }
     }
 
+
     pub fn call_subroutine(pc: &mut u16, stack: &mut Stack<u16>, addr: u16) -> Result<(), SubroutineError> {
         println!("EXE: CALL");
 
@@ -297,6 +298,7 @@ impl Chip8 {
         Ok(())
     }
 
+
     pub fn return_subroutine(pc: &mut u16, stack: &mut Stack<u16>) {
         println!("EXE: RETURN");
 
@@ -304,9 +306,11 @@ impl Chip8 {
         *pc = return_addr;
     }
 
+
     pub fn is_valid_register(register: usize) -> bool {
         register <= 17
     }
+
 
     pub fn set(v: &mut [u8; 16], register: usize, value: u8) {
         println!("EXE: SET");
@@ -319,6 +323,7 @@ impl Chip8 {
             panic!("SET: INVALID REGISTER");
         }
     }
+
 
     /**
     Add `addend` to `register`. If overflows, it just wraps without any carry register affected
@@ -340,6 +345,7 @@ impl Chip8 {
         *i = value;
         println!("i({}) = {}", *i, value);
     }
+
 
     fn display(&mut self, register_x: usize, register_y: usize, n: u8) {
         println!("EXE: DISPLAY");
@@ -377,18 +383,22 @@ impl Chip8 {
         }
     }
 
+
     fn binary_or_vx(&mut self, register_x: usize, register_y: usize) {
         println!("EXE: BINARY_OR_VX");
         self.v[register_x] = self.v[register_x] | self.v[register_y];
     }
 
+
     fn binary_and_vx(&mut self, register_x: usize, register_y: usize) {
         self.v[register_x] = self.v[register_x] & self.v[register_y];
     }
 
+
     fn binary_xor_vx(&mut self, register_x: usize, register_y: usize) {
         self.v[register_x] = self.v[register_x] ^ self.v[register_y];
     }
+
 
     fn add_vx(&mut self, register_x: usize, register_y: usize) {
         if self.v[register_x].checked_add(self.v[register_x]) == None {
@@ -401,6 +411,32 @@ impl Chip8 {
     }
 
 
+    fn skip_if_equal(&mut self, register_x: usize, value: u8) { // 3XNN
+        if self.v[register_x] == value {
+            self.pc += 0x02;
+        }
+    }
+
+
+    fn skip_if_not_equal(&mut self, register_x: usize, value: u8) { // 4XNN
+        if self.v[register_x] != value {
+            self.pc += 0x02;
+        }
+    }
+
+
+    fn skip_if_registers_equal (&mut self, register_x: usize, register_y: usize) { // 5XY0
+        if self.v[register_x] == self.v[register_y] {
+            self.pc += 0x02;
+        }
+    }
+
+
+    fn skip_if_registers_not_equal (&mut self, register_x: usize, register_y: usize) { // 9XY0
+        if self.v[register_x] != self.v[register_y] {
+            self.pc += 0x02;
+        }
+    }
 
 }
 
