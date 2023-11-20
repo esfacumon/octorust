@@ -27,7 +27,7 @@ Instructions needed to run a basic ROM which displays IBM Logo on screen. This R
   | ✅       | `ANNN` | set index register I
   | ✅       | `DXYN` | display/draw
   
-### Rest of instructions
+### Other of instructions
   | Status    | Code   | Instruction |
   |:---------:|:------:|-------------| 
   | ✅        | `2NNN` | subroutine call |
