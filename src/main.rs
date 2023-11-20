@@ -34,7 +34,7 @@ fn main() {
     let sdl_context = sdl2::init().expect("Init SDL2 error");
     let video_subsystem = sdl_context.video().expect("Init video subsystem error");
 
-    let window = video_subsystem.window("rust-sdl2 demo", SCREEN_WIDTH, SCREEN_HEIGHT)
+    let window = video_subsystem.window("Octorust Chip8 Interpreter!", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
         .build()
         .expect("Window init error");
@@ -76,9 +76,9 @@ fn render(chip8: &Chip8, canvas: &mut sdl2::render::Canvas<sdl2::video::Window>)
 
             let color;
             if pixel {
-                color = Color::RGB(255, 255, 255);
+                color = Color::RGB(203, 216, 245);
             } else {
-                color = Color::RGB(0, 0, 0);
+                color = Color::RGB(55, 74, 117);
             };
 
             canvas.set_draw_color(color);

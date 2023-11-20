@@ -18,7 +18,8 @@ use std::fs::File;
 use std::io::Read;
 
 
-const ROM_PATH: &str ="/Users/fas/dev/octorust/roms/3-corax+.ch8";
+// const ROM_PATH: &str ="/Users/fas/dev/octorust/roms/3-corax+.ch8";
+const ROM_PATH: &str ="/Users/fas/dev/octorust/roms/IBMLogo.ch8";
 
 pub struct Chip8 {
     pub pixel_array: [[bool; WIDTH]; HEIGHT],
