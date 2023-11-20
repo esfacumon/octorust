@@ -1,5 +1,5 @@
 use crate::chip8::instruction::Instruction;
-use crate::chip8::util::get_nibble;
+use crate::chip8::low_level_operations::get_nibble;
 use crate::chip8::stack::Stack;
 
 use crate::chip8::constants::{
@@ -9,19 +9,21 @@ use crate::chip8::constants::{
     FONT_OFFSET,
     ROM_OFFSET,
     WIDTH,
-    HEIGHT
+    HEIGHT,
 };
-
 
 use crate::chip8::errors::{SubroutineError, RegisterError};
 
 use std::fs::File;
 use std::io::Read;
 
+
+const ROM_PATH: &str ="/Users/fas/dev/octorust/roms/3-corax+.ch8";
+
 pub struct Chip8 {
     pub pixel_array: [[bool; WIDTH]; HEIGHT],
     memory: [u8; MEMORY_SIZE],
-    i: u16, // index register
+    index: u16, // index register
     pc: u16,
     stack: Stack<u16>,
     // delay_timer: u8,
@@ -34,7 +36,7 @@ impl Chip8 {
         let mut chip8 = Chip8 {
             pixel_array: [[false; WIDTH]; HEIGHT],
             memory: [0; MEMORY_SIZE],
-            i: 0,
+            index: 0,
             pc: ROM_OFFSET,
             stack: Stack::new(),
             v: [0; 16],
@@ -43,7 +45,7 @@ impl Chip8 {
         };
 
         chip8.load_font();
-        chip8.load_rom("/workspaces/rust/octorust/roms/IBMLogo.ch8").expect("Failed loading rom");
+        chip8.load_rom(ROM_PATH).expect("Failed loading rom");
         chip8
     }
 
@@ -65,7 +67,9 @@ impl Chip8 {
         return instruction;
     }
 
-
+    /**
+     * Instruction decoding using enum
+     */
     pub fn decode(&mut self, instruction: u16) -> Instruction {
         let first_nibble = get_nibble(instruction, 1);
 
@@ -100,12 +104,36 @@ impl Chip8 {
                 Instruction::SetI { value }
             },
             0xD => {
-                let x: u16 = get_nibble(instruction, 2);
-                let y: u16 = get_nibble(instruction, 3);
-                let n: u16 = get_nibble(instruction, 4);
-                Instruction::DisplayDraw { x, y, n }
+                let register_x = get_nibble(instruction, 2);
+                let register_y = get_nibble(instruction, 3);
+                let n = get_nibble(instruction, 4);
+                Instruction::DisplayDraw { register_x, register_y, n }
+            },
+            0x8 => {
+                let register_x = get_nibble(instruction, 2);
+                let register_y = get_nibble(instruction, 3);
+
+                match get_nibble(instruction, 4) {
+                    0x0 => {
+                        // set
+                        Instruction::NOP
+                    },
+                    0x1 => {
+                        Instruction::BinaryOrVX { register_x, register_y }
+                    },
+                    0x2 => {
+                        Instruction::BinaryAndVX { register_x, register_y }
+                    },
+                    0x3 => {
+                        Instruction::BinaryXorVX { register_x, register_y }
+                    },
+                    0x4 => {
+                        Instruction::BinaryXorVX { register_x, register_y }
+                    },
+                    _ => Instruction::NOP
+                }
             }
-            _ => Instruction::ClearScreen
+            _ => Instruction::NOP
         }
     }
 
@@ -123,8 +151,13 @@ impl Chip8 {
             Instruction::ReturnSubroutine => Chip8::return_subroutine(&mut self.pc, &mut self.stack),
             Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value),
             Instruction::Add { register, value } => Chip8::add(&mut self.v, register, value).expect("ADD error"),
-            Instruction::SetI { value } => Chip8::set_i(&mut self.i, value),
-            Instruction::DisplayDraw { x, y, n } => Chip8::display(self, x as usize, y as usize, n as u8),
+            Instruction::SetI { value } => Chip8::set_i(&mut self.index, value),
+            Instruction::DisplayDraw { register_x, register_y, n } => Chip8::display(self, register_x as usize, register_y as usize, n as u8),
+            Instruction::BinaryOrVX{ register_x, register_y } => Chip8::binary_or_vx(self, register_x as usize, register_y as usize),
+            Instruction::BinaryAndVX{ register_x, register_y } => Chip8::binary_and_vx(self, register_x as usize, register_y as usize),
+            Instruction::BinaryXorVX{ register_x, register_y } => Chip8::binary_xor_vx(self, register_x as usize, register_y as usize),
+            Instruction::AddVX{ register_x, register_y } => Chip8::add_vx(self, register_x as usize, register_y as usize),
+            Instruction::NOP => println!("NOP"),
         }
     }
 
@@ -315,13 +348,15 @@ impl Chip8 {
         self.v[0xF] = 0;
 
         for row in 0..n {
-            let sprite_row: u8 = self.memory[(self.i + row as u16) as usize];
+            let sprite_row: u8 = self.memory[(self.index + row as u16) as usize];
             
             let mut pixel_row: u8 = 0;
             // convert pixel array row to u8 var
             for i in 0..8 {
-                if self.pixel_array[y + row as usize][x + i as usize] {
-                    pixel_row |= 1 << (7 - i);
+                if y + (row as usize) < HEIGHT && x + (i as usize) < WIDTH {
+                    if self.pixel_array[y + row as usize][x + i as usize] {
+                        pixel_row |= 1 << (7 - i);
+                    }
                 }
             }
 
@@ -342,6 +377,7 @@ impl Chip8 {
     }
 
     fn binary_or_vx(&mut self, register_x: usize, register_y: usize) {
+        println!("EXE: BINARY_OR_VX");
         self.v[register_x] = self.v[register_x] | self.v[register_y];
     }
 

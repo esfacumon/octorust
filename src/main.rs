@@ -60,7 +60,7 @@ fn main() {
 
         render(&chip8, &mut canvas);
 
-        ::std::thread::sleep(Duration::new(0, 1_000_000u32 / 60) * 60);
+        ::std::thread::sleep(Duration::new(0, 10_000_000u32 / 60) * 60);
     }
 }
 

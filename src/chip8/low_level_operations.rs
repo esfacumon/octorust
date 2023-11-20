@@ -1,4 +1,4 @@
-// util.rs
+// low_level_operations.rs
 
 /**
 Returns a specific 4-bit nibble (half-byte) from a 16-bit address.
@@ -33,7 +33,7 @@ The nibble positions are as follows for a 16-bit address:
 
 - Handle invalid `nibble_number` inputs more gracefully, possibly with an error message or custom error type.
 */
-pub fn get_nibble(addr: u16, nibble_number: u8) -> u16 {
+pub fn get_nibble(addr: u16, nibble_number: u8) -> u8 {
     let bit_mask: u16;
     match nibble_number {
         1 => bit_mask = 0b1111_0000_0000_0000,
@@ -42,6 +42,6 @@ pub fn get_nibble(addr: u16, nibble_number: u8) -> u16 {
         4 => bit_mask = 0b0000_0000_0000_1111,
         _ => bit_mask = 0,
     }
-    (addr & bit_mask) >> 12 - (4 * (nibble_number - 1))
+    ((addr & bit_mask) >> 12 - (4 * (nibble_number - 1)) as u8).try_into().unwrap()
 }
 

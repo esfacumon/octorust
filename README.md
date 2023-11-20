@@ -34,10 +34,10 @@ This instructions are needed to run the most basic ROM available for Chip8, whic
   |⌛         |`4XNN`| Skip
   |⌛         |`5XY0`| Skip
   |⌛         |`9XY0`| Skip
-  |🔜         |`8XY1`| Binary OR
-  |🔜         |`8XY2`| Binary AND
-  |🔜         |`8XY3`| Logical XOR
-  |🔜         |`8XY4`| Add VX
+  |✅         |`8XY1`| Binary OR
+  |✅         |`8XY2`| Binary AND
+  |✅         |`8XY3`| Logical XOR
+  |✅         |`8XY4`| Add VX
   |🔜         |`8XY5`| Substract VX=VX-VY
   |🔜         |`8XY7`| Substract VX=VY-VX
   |🔜         |`8XY6`| Shift

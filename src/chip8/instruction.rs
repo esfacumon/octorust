@@ -7,5 +7,10 @@ pub enum Instruction {
     Set { register: usize, value: u8},
     Add { register: usize, value: u8},
     SetI { value: u16 },
-    DisplayDraw { x: u16, y: u16, n: u16},
+    DisplayDraw { register_x: u8, register_y: u8, n: u8},
+    BinaryOrVX { register_x: u8, register_y: u8},
+    BinaryAndVX { register_x: u8, register_y: u8},
+    BinaryXorVX { register_x: u8, register_y: u8},
+    AddVX { register_x: u8, register_y: u8},
+    NOP,
 }
