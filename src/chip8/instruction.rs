@@ -12,5 +12,5 @@ pub enum Instruction {
     BinaryAndVX { register_x: u8, register_y: u8},
     BinaryXorVX { register_x: u8, register_y: u8},
     AddVX { register_x: u8, register_y: u8},
-    NOP,
+    Nop,
 }

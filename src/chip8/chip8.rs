@@ -65,7 +65,7 @@ impl Chip8 {
         
         self.pc += 0x02;
         
-        return instruction;
+        instruction
     }
 
     /**
@@ -117,7 +117,7 @@ impl Chip8 {
                 match get_nibble(instruction, 4) {
                     0x0 => {
                         // set
-                        Instruction::NOP
+                        Instruction::Nop
                     },
                     0x1 => {
                         Instruction::BinaryOrVX { register_x, register_y }
@@ -131,10 +131,10 @@ impl Chip8 {
                     0x4 => {
                         Instruction::BinaryXorVX { register_x, register_y }
                     },
-                    _ => Instruction::NOP
+                    _ => Instruction::Nop
                 }
             }
-            _ => Instruction::NOP
+            _ => Instruction::Nop
         }
     }
 
@@ -153,12 +153,12 @@ impl Chip8 {
             Instruction::Set { register, value } => Chip8::set(&mut self.v, register, value),
             Instruction::Add { register, value } => Chip8::add(&mut self.v, register, value).expect("ADD error"),
             Instruction::SetI { value } => Chip8::set_i(&mut self.index, value),
-            Instruction::DisplayDraw { register_x, register_y, n } => Chip8::display(self, register_x as usize, register_y as usize, n as u8),
+            Instruction::DisplayDraw { register_x, register_y, n } => Chip8::display(self, register_x as usize, register_y as usize, n),
             Instruction::BinaryOrVX{ register_x, register_y } => Chip8::binary_or_vx(self, register_x as usize, register_y as usize),
             Instruction::BinaryAndVX{ register_x, register_y } => Chip8::binary_and_vx(self, register_x as usize, register_y as usize),
             Instruction::BinaryXorVX{ register_x, register_y } => Chip8::binary_xor_vx(self, register_x as usize, register_y as usize),
             Instruction::AddVX{ register_x, register_y } => Chip8::add_vx(self, register_x as usize, register_y as usize),
-            Instruction::NOP => println!("NOP"),
+            Instruction::Nop => println!("Nop"),
         }
     }
 
@@ -181,8 +181,8 @@ impl Chip8 {
             0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         ];
-        for i in 0..font.len() {
-            self.memory[i + FONT_OFFSET as usize] = font[i];
+        for (i, font_char) in font.iter().enumerate() {
+            self.memory[i + FONT_OFFSET as usize] = *font_char;
         }
     }
 
@@ -230,8 +230,7 @@ impl Chip8 {
         let bigger_byte: u8 = memory[addr as usize];
         let smaller_byte: u8 = memory[addr as usize + 1];
 
-        let instruction = ((bigger_byte as u16) << 8) | (smaller_byte as u16);
-        return instruction;
+        ((bigger_byte as u16) << 8) | (smaller_byte as u16)
     }
 
 
@@ -248,7 +247,7 @@ impl Chip8 {
  
 
     pub fn is_valid_address(addr: u16) -> bool {
-        addr >= MIN_ADDRESS && addr <= MAX_ADDRESS
+        (MIN_ADDRESS..=MAX_ADDRESS).contains(&addr)
     }
 
     pub fn cycle(&mut self) {
@@ -289,7 +288,7 @@ impl Chip8 {
             return Err(SubroutineError::InvalidAddress(addr));
         }
 
-        if let Err(_) = stack.push(*pc) {
+        if stack.push(*pc).is_err() {
             return Err(SubroutineError::StackOverflow);
         }
 
@@ -349,8 +348,8 @@ impl Chip8 {
 
     fn display(&mut self, register_x: usize, register_y: usize, n: u8) {
         println!("EXE: DISPLAY");
-        let x: usize = (self.v[register_x] as usize) % WIDTH as usize;
-        let y: usize = (self.v[register_y] as usize) % HEIGHT as usize;
+        let x: usize = (self.v[register_x] as usize) % WIDTH;
+        let y: usize = (self.v[register_y] as usize) % HEIGHT;
         println!("\tCOORDINATES: n={}, v[{}]=x={}, v[{}]=y={}", n, register_x, x, register_y, y);
         self.v[0xF] = 0;
 
@@ -360,10 +359,8 @@ impl Chip8 {
             let mut pixel_row: u8 = 0;
             // convert pixel array row to u8 var
             for i in 0..8 {
-                if y + (row as usize) < HEIGHT && x + (i as usize) < WIDTH {
-                    if self.pixel_array[y + row as usize][x + i as usize] {
-                        pixel_row |= 1 << (7 - i);
-                    }
+                if y + (row as usize) < HEIGHT && x + (i as usize) < WIDTH && self.pixel_array[y + row as usize][x + i as usize] {
+                    pixel_row |= 1 << (7 - i);
                 }
             }
 
@@ -374,10 +371,10 @@ impl Chip8 {
             }
 
             for i in 0..8 {
-                if (x + i) < WIDTH as usize &&
-                        (y + row as usize) < HEIGHT as usize &&
+                if (x + i) < WIDTH &&
+                        (y + row as usize) < HEIGHT &&
                         final_pixel_row != pixel_row {
-                    self.pixel_array[y + row as usize][x + i] = ((final_pixel_row >> (7 - i)) & 0000_0001) == 1;
+                    self.pixel_array[y + row as usize][x + i] = ((final_pixel_row >> (7 - i)) & 0b0000_0001) == 1;
                 }
             }
         }
@@ -386,22 +383,22 @@ impl Chip8 {
 
     fn binary_or_vx(&mut self, register_x: usize, register_y: usize) {
         println!("EXE: BINARY_OR_VX");
-        self.v[register_x] = self.v[register_x] | self.v[register_y];
+        self.v[register_x] |= self.v[register_y];
     }
 
 
     fn binary_and_vx(&mut self, register_x: usize, register_y: usize) {
-        self.v[register_x] = self.v[register_x] & self.v[register_y];
+        self.v[register_x] &= self.v[register_y];
     }
 
 
     fn binary_xor_vx(&mut self, register_x: usize, register_y: usize) {
-        self.v[register_x] = self.v[register_x] ^ self.v[register_y];
+        self.v[register_x] ^= self.v[register_y];
     }
 
 
     fn add_vx(&mut self, register_x: usize, register_y: usize) {
-        if self.v[register_x].checked_add(self.v[register_x]) == None {
+        if self.v[register_x].checked_add(self.v[register_x]).is_none() {
             self.v[0xF] = 1
         }
         else {
@@ -411,31 +408,61 @@ impl Chip8 {
     }
 
 
-    fn skip_if_equal(&mut self, register_x: usize, value: u8) { // 3XNN
+    fn skip_if_equal(&mut self, register_x: usize, value: u8) -> Result<(), RegisterError> { // 3XNN
+        if !Self::is_valid_register(register_x) {
+            return Err(RegisterError::InvalidRegister(register_x as u8));
+        }
+
         if self.v[register_x] == value {
             self.pc += 0x02;
         }
+
+        Ok(())
     }
 
 
-    fn skip_if_not_equal(&mut self, register_x: usize, value: u8) { // 4XNN
+    fn skip_if_not_equal(&mut self, register_x: usize, value: u8) -> Result<(), RegisterError> { // 4XNN
+        if !Self::is_valid_register(register_x) {
+            return Err(RegisterError::InvalidRegister(register_x as u8));
+        }
+
         if self.v[register_x] != value {
             self.pc += 0x02;
         }
+
+        Ok(())
     }
 
 
-    fn skip_if_registers_equal (&mut self, register_x: usize, register_y: usize) { // 5XY0
+    fn skip_if_registers_equal (&mut self, register_x: usize, register_y: usize) -> Result<(), RegisterError> { // 5XY0
+        if !Self::is_valid_register(register_x) {
+            return Err(RegisterError::InvalidRegister(register_x as u8));
+        }
+
+        if !Self::is_valid_register(register_y) {
+            return Err(RegisterError::InvalidRegister(register_y as u8));
+        }
+
         if self.v[register_x] == self.v[register_y] {
             self.pc += 0x02;
         }
+        Ok(())
     }
 
 
-    fn skip_if_registers_not_equal (&mut self, register_x: usize, register_y: usize) { // 9XY0
+    fn skip_if_registers_not_equal (&mut self, register_x: usize, register_y: usize) -> Result<(), RegisterError> { // 9XY0
+        if !Self::is_valid_register(register_x) {
+            return Err(RegisterError::InvalidRegister(register_x as u8));
+        }
+
+        if !Self::is_valid_register(register_y) {
+            return Err(RegisterError::InvalidRegister(register_y as u8));
+        }
+        
         if self.v[register_x] != self.v[register_y] {
             self.pc += 0x02;
         }
+        Ok(())
     }
 
 }

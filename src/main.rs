@@ -74,14 +74,11 @@ fn render(chip8: &Chip8, canvas: &mut sdl2::render::Canvas<sdl2::video::Window>)
             let x = i as u32;
             let y = j as u32;
 
-            let color;
             if pixel {
-                color = Color::RGB(203, 216, 245);
+                canvas.set_draw_color(Color::RGB(203, 216, 245));
             } else {
-                color = Color::RGB(55, 74, 117);
-            };
-
-            canvas.set_draw_color(color);
+                canvas.set_draw_color(Color::RGB(55, 74, 117));
+            }
 
             let rect = Rect::new(
                 PADDING as i32 + (x as i32 * SCALE_FACTOR as i32),
