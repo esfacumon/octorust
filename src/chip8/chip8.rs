@@ -146,7 +146,7 @@ impl Chip8 {
                         Instruction::BinaryXorVX { register_x, register_y }
                     },
                     0x4 => {
-                        Instruction::BinaryXorVX { register_x, register_y }
+                        Instruction::AddVX { register_x, register_y }
                     },
                     _ => Instruction::Nop
                 }
