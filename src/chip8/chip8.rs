@@ -330,7 +330,7 @@ impl Chip8 {
     }
 
 
-    pub fn add(v: &mut [u8; 16], register: usize, addend: u8) -> Result<(), RegisterError>{
+    pub fn add(v: &mut [u8; 16], register: usize, addend: u8) -> Result<(), RegisterError> {
         println!("EXE: ADD");
         if !Self::is_valid_register(register) {
             return Err(RegisterError::InvalidRegister(register));
@@ -438,6 +438,7 @@ impl Chip8 {
 
 
     fn skip_if_registers_equal (&mut self, register_x: usize, register_y: usize) -> Result<(), RegisterError> {
+        if !Self::is_valid_register(register_x) {
             return Err(RegisterError::InvalidRegister(register_x ));
         }
 
@@ -448,6 +449,7 @@ impl Chip8 {
         if self.v[register_x] == self.v[register_y] {
             self.pc += 0x02;
         }
+
         Ok(())
     }
 
@@ -464,9 +466,9 @@ impl Chip8 {
         if self.v[register_x] != self.v[register_y] {
             self.pc += 0x02;
         }
+        
         Ok(())
     }
-
 }
 
 #[cfg(test)]
