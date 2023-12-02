@@ -248,13 +248,11 @@ impl Chip8 {
 
 
     pub fn clear_screen(pixel_array: &mut [[bool; WIDTH]; HEIGHT]) {
-        println!("EXE: CLEAR SCREEN");
         *pixel_array = [[false; WIDTH]; HEIGHT];
     }
 
 
     pub fn fill_screen(pixel_array: &mut [[bool; WIDTH]; HEIGHT]) {
-        println!("EXE: FILL SCREEN");
         *pixel_array = [[true; WIDTH]; HEIGHT];
     }
  
@@ -275,8 +273,6 @@ impl Chip8 {
 
 
     pub fn jump(pc: &mut u16, addr: u16) {
-        println!("EXE: JUMP");
-        
         if Self::is_valid_address(addr) {
             *pc = addr;
         }
@@ -288,8 +284,6 @@ impl Chip8 {
 
 
     pub fn call_subroutine(pc: &mut u16, stack: &mut Stack<u16>, addr: u16) -> Result<(), SubroutineError> {
-        println!("EXE: CALL");
-
         if !Self::is_valid_address(addr) {
             return Err(SubroutineError::InvalidAddress(addr));
         }
@@ -298,15 +292,12 @@ impl Chip8 {
             return Err(SubroutineError::StackOverflow);
         }
 
-        println!("\tSTACK LENGTH: {:?}", stack.len());
         *pc = addr;
         Ok(())
     }
 
 
     pub fn return_subroutine(pc: &mut u16, stack: &mut Stack<u16>) {
-        println!("EXE: RETURN");
-
         let return_addr = stack.pop().expect("Error: Empty stack");
         *pc = return_addr;
     }
@@ -318,10 +309,8 @@ impl Chip8 {
 
 
     pub fn set(v: &mut [u8; 16], register: usize, value: u8) {
-        println!("EXE: SET");
         if Self::is_valid_register(register) {
             v[register] = value;
-            println!("v[{}] = {} || valor real = {}", register, value, v[register]);
         }
         else {
             // TODO: Handle error
@@ -331,29 +320,23 @@ impl Chip8 {
 
 
     pub fn add(v: &mut [u8; 16], register: usize, addend: u8) -> Result<(), RegisterError> {
-        println!("EXE: ADD");
         if !Self::is_valid_register(register) {
             return Err(RegisterError::InvalidRegister(register));
         }
         v[register] = v[register].wrapping_add(addend);
         
-        println!("\t(+ADDED)v[{}] = (+{}){}", register, addend, v[register]);
         Ok(())
     }
 
 
     fn set_i(i: &mut u16, value: u16) {
-        println!("EXE: ADD_I");
         *i = value;
-        println!("i({}) = {}", *i, value);
     }
 
 
     fn display(&mut self, register_x: usize, register_y: usize, n: u8) {
-        println!("EXE: DISPLAY");
         let x: usize = (self.v[register_x] as usize) % WIDTH;
         let y: usize = (self.v[register_y] as usize) % HEIGHT;
-        println!("\tCOORDINATES: n={}, v[{}]=x={}, v[{}]=y={}", n, register_x, x, register_y, y);
         self.v[0xF] = 0;
 
         for row in 0..n {
@@ -385,7 +368,6 @@ impl Chip8 {
 
 
     fn binary_or_vx(&mut self, register_x: usize, register_y: usize) {
-        println!("EXE: BINARY_OR_VX");
         self.v[register_x] |= self.v[register_y];
     }
 
