@@ -25,7 +25,7 @@ const SCREEN_WIDTH: u32 = (WIDTH * SCALE_FACTOR as usize) as u32;
 const SCREEN_HEIGHT: u32  = (HEIGHT * SCALE_FACTOR as usize) as u32;
 
 fn main() {
-    println!("Octorust  Copyright (C) 2023  Facundo A.
+    println!("Octorust  Copyright (C) 2023 https://github.com/esfacumon/
     This program comes with ABSOLUTELY NO WARRANTY.
     This is free software, and you are welcome to redistribute it
     under certain conditions.");

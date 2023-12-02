@@ -13,4 +13,8 @@ pub enum Instruction {
     BinaryXorVX { register_x: u8, register_y: u8},
     AddVX { register_x: u8, register_y: u8},
     Nop,
+    SkipIfEqual { register_x: usize, value: u8 },
+    SkipIfNotEqual { register_x: usize, value: u8 },
+    SkipIfRegistersEqual { register_x: usize, register_y: usize },
+    SkipIfRegistersNotEqual { register_x: usize, register_y: usize },
 }

@@ -90,6 +90,32 @@ impl Chip8 {
                 let addr: u16 = instruction % 0x1000;
                 Instruction::CallSubroutine { addr }
             },
+            0x3 => {
+                let register_x: usize = (instruction & 0x0100) as usize;
+                let value: u8 = (instruction & 0x0011) as u8;
+                Instruction::SkipIfEqual { register_x, value }
+            },
+            0x4 => {
+                let register_x: usize = (instruction & 0x0100) as usize;
+                let value: u8 = (instruction & 0x0011) as u8;
+                Instruction::SkipIfNotEqual { register_x, value }
+            },
+            0x5 => {
+                if get_nibble(instruction, 4) != 0 {
+                    panic!("Invalid instruction: {}", instruction);
+                }
+                let register_x: usize = (instruction & 0x0100) as usize;
+                let register_y: usize = (instruction & 0x0010) as usize;
+                Instruction::SkipIfRegistersEqual { register_x, register_y }
+            },
+            0x9 => {
+                if get_nibble(instruction, 4) != 0 {
+                    panic!("Invalid instruction: {}", instruction);
+                }
+                let register_x: usize = (instruction & 0x0100) as usize;
+                let register_y: usize = (instruction & 0x0010) as usize;
+                Instruction::SkipIfRegistersNotEqual { register_x, register_y }
+            },
             0x6 => {
                 let register = get_nibble(instruction, 2) as usize;
                 let value: u8 = (instruction % 0x0100) as u8;
@@ -159,6 +185,10 @@ impl Chip8 {
             Instruction::BinaryXorVX{ register_x, register_y } => Chip8::binary_xor_vx(self, register_x as usize, register_y as usize),
             Instruction::AddVX{ register_x, register_y } => Chip8::add_vx(self, register_x as usize, register_y as usize),
             Instruction::Nop => println!("Nop"),
+            Instruction::SkipIfEqual{ register_x, value} => Chip8::skip_if_equal(self, register_x, value).expect("SkipIfEqual error"),
+            Instruction::SkipIfNotEqual{ register_x, value} => Chip8::skip_if_not_equal(self, register_x, value).expect("SkipIfNotEqual error"),
+            Instruction::SkipIfRegistersEqual{ register_x, register_y} => Chip8::skip_if_registers_equal(self, register_x, register_y).expect("SkipIfRegistersEqual error"),
+            Instruction::SkipIfRegistersNotEqual{ register_x, register_y} => Chip8::skip_if_registers_not_equal(self, register_x, register_y).expect("SkipIfRegistersNotEqual error"),
         }
     }
 
@@ -330,7 +360,7 @@ impl Chip8 {
     pub fn add(v: &mut [u8; 16], register: usize, addend: u8) -> Result<(), RegisterError>{
         println!("EXE: ADD");
         if !Self::is_valid_register(register) {
-            return Err(RegisterError::InvalidRegister(register as u8));
+            return Err(RegisterError::InvalidRegister(register));
         }
         v[register] = v[register].wrapping_add(addend);
         
@@ -410,7 +440,7 @@ impl Chip8 {
 
     fn skip_if_equal(&mut self, register_x: usize, value: u8) -> Result<(), RegisterError> { // 3XNN
         if !Self::is_valid_register(register_x) {
-            return Err(RegisterError::InvalidRegister(register_x as u8));
+            return Err(RegisterError::InvalidRegister(register_x));
         }
 
         if self.v[register_x] == value {
@@ -423,7 +453,7 @@ impl Chip8 {
 
     fn skip_if_not_equal(&mut self, register_x: usize, value: u8) -> Result<(), RegisterError> { // 4XNN
         if !Self::is_valid_register(register_x) {
-            return Err(RegisterError::InvalidRegister(register_x as u8));
+            return Err(RegisterError::InvalidRegister(register_x));
         }
 
         if self.v[register_x] != value {
@@ -436,11 +466,11 @@ impl Chip8 {
 
     fn skip_if_registers_equal (&mut self, register_x: usize, register_y: usize) -> Result<(), RegisterError> { // 5XY0
         if !Self::is_valid_register(register_x) {
-            return Err(RegisterError::InvalidRegister(register_x as u8));
+            return Err(RegisterError::InvalidRegister(register_x ));
         }
 
         if !Self::is_valid_register(register_y) {
-            return Err(RegisterError::InvalidRegister(register_y as u8));
+            return Err(RegisterError::InvalidRegister(register_y));
         }
 
         if self.v[register_x] == self.v[register_y] {
@@ -452,11 +482,11 @@ impl Chip8 {
 
     fn skip_if_registers_not_equal (&mut self, register_x: usize, register_y: usize) -> Result<(), RegisterError> { // 9XY0
         if !Self::is_valid_register(register_x) {
-            return Err(RegisterError::InvalidRegister(register_x as u8));
+            return Err(RegisterError::InvalidRegister(register_x));
         }
 
         if !Self::is_valid_register(register_y) {
-            return Err(RegisterError::InvalidRegister(register_y as u8));
+            return Err(RegisterError::InvalidRegister(register_y));
         }
         
         if self.v[register_x] != self.v[register_y] {
