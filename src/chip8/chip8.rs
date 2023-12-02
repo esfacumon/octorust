@@ -24,7 +24,7 @@ const ROM_PATH: &str ="/Users/fas/dev/octorust/roms/IBMLogo.ch8";
 pub struct Chip8 {
     pub pixel_array: [[bool; WIDTH]; HEIGHT],
     memory: [u8; MEMORY_SIZE],
-    index: u16, // index register
+    index: u16,
     pc: u16,
     stack: Stack<u16>,
     // delay_timer: u8,
@@ -51,12 +51,6 @@ impl Chip8 {
     }
 
     
-    /**
-    Read addr stored in PC from memory and returns its value
-
-    # Returns
-    Instruction code
-     */
     pub fn fetch(&mut self) -> u16 {
         println!("fet::PC: {}", self.pc);
         
@@ -68,9 +62,7 @@ impl Chip8 {
         instruction
     }
 
-    /**
-     * Instruction decoding using enum
-     */
+
     pub fn decode(&mut self, instruction: u16) -> Instruction {
         let first_nibble = get_nibble(instruction, 1);
 
@@ -142,7 +134,6 @@ impl Chip8 {
 
                 match get_nibble(instruction, 4) {
                     0x0 => {
-                        // set
                         Instruction::Nop
                     },
                     0x1 => {
@@ -247,14 +238,6 @@ impl Chip8 {
     # Returns
 
     Returns a 16-bit instruction combining the bytes stored at `addr` and `addr + 1`.
-
-    # Example
-
-    ```
-    let memory: [u8; 4096] = [/* your Chip-8 memory here */];
-    let addr: u16 = 0x200;
-    let instruction = read_memory_address(memory, addr);
-    ```
     */
     pub fn read_memory_address(memory: [u8; 4096], addr: u16) -> u16 {
         let bigger_byte: u8 = memory[addr as usize];
@@ -290,14 +273,7 @@ impl Chip8 {
 impl Chip8 {
     // Instruction methods
 
-    /**
-    Makes PC point to given address
 
-    # Parameters
-
-    - `pc`: Current program counter
-    - `addr`: Address to jump
-    */
     pub fn jump(pc: &mut u16, addr: u16) {
         println!("EXE: JUMP");
         
@@ -354,9 +330,6 @@ impl Chip8 {
     }
 
 
-    /**
-    Add `addend` to `register`. If overflows, it just wraps without any carry register affected
-     */
     pub fn add(v: &mut [u8; 16], register: usize, addend: u8) -> Result<(), RegisterError>{
         println!("EXE: ADD");
         if !Self::is_valid_register(register) {
@@ -438,7 +411,7 @@ impl Chip8 {
     }
 
 
-    fn skip_if_equal(&mut self, register_x: usize, value: u8) -> Result<(), RegisterError> { // 3XNN
+    fn skip_if_equal(&mut self, register_x: usize, value: u8) -> Result<(), RegisterError> {
         if !Self::is_valid_register(register_x) {
             return Err(RegisterError::InvalidRegister(register_x));
         }
@@ -451,7 +424,7 @@ impl Chip8 {
     }
 
 
-    fn skip_if_not_equal(&mut self, register_x: usize, value: u8) -> Result<(), RegisterError> { // 4XNN
+    fn skip_if_not_equal(&mut self, register_x: usize, value: u8) -> Result<(), RegisterError> {
         if !Self::is_valid_register(register_x) {
             return Err(RegisterError::InvalidRegister(register_x));
         }
@@ -464,8 +437,7 @@ impl Chip8 {
     }
 
 
-    fn skip_if_registers_equal (&mut self, register_x: usize, register_y: usize) -> Result<(), RegisterError> { // 5XY0
-        if !Self::is_valid_register(register_x) {
+    fn skip_if_registers_equal (&mut self, register_x: usize, register_y: usize) -> Result<(), RegisterError> {
             return Err(RegisterError::InvalidRegister(register_x ));
         }
 
@@ -480,7 +452,7 @@ impl Chip8 {
     }
 
 
-    fn skip_if_registers_not_equal (&mut self, register_x: usize, register_y: usize) -> Result<(), RegisterError> { // 9XY0
+    fn skip_if_registers_not_equal (&mut self, register_x: usize, register_y: usize) -> Result<(), RegisterError> {
         if !Self::is_valid_register(register_x) {
             return Err(RegisterError::InvalidRegister(register_x));
         }
@@ -520,8 +492,6 @@ mod tests {
         assert_eq!(pc, addr);
         assert_eq!(stack.pop().unwrap(), 0x100);
 
-
-        // testing error handling
         pc = 0x1000;
         addr = 0x1111;
         assert!(Chip8::call_subroutine(&mut pc, &mut stack, addr).is_err());
