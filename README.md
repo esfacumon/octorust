@@ -40,21 +40,23 @@ Instructions needed to run a basic ROM which displays IBM Logo on screen. This R
   |✅         |`8XY2`| Binary AND
   |✅         |`8XY3`| Logical XOR
   |✅         |`8XY4`| Add VX
-  |⌛         |`8XY5`| Substract VX=VX-VY
-  |⌛         |`8XY7`| Substract VX=VY-VX
-  |⌛         |`8XY6`| Shift
-  |⌛         |`8XYE`| Shift
+  |⌛*         |`8XY5`| Substract VX=VX-VY
+  |⌛*         |`8XY7`| Substract VX=VY-VX
+  |⌛*         |`8XY6`| Shift
+  |⌛*         |`8XYE`| Shift
   |🔜         |`BNNN`| Jump with offset
   |🔜         |`CXNN`| Random
   |🔜         |`EX9E`| Skip if
   |🔜         |`EXA1`| Skip if
   |🔜         |`FX07`, `FX15` and `FX18`| Timers
-  |⌛         |`FX1E`| Add index register I
+  |⌛*         |`FX1E`| Add index register I
   |🔜         |`FX0A`| Get key (on key up, beeps while pressed down)
   |🔜         |`FX29`| Font char
   |🔜         |`FX33`| Binary-coded decimal conversion
   |⌛         |`FX55`| Store
   |⌛         |`FX65`| Load
+
+*Function implemented, not yet runnable on emulator
 
 ### Input handling
 

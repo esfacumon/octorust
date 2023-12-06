@@ -393,6 +393,75 @@ impl Chip8 {
     }
 
 
+    fn add_i(&mut self, register_x: usize) { // FX1E
+
+        /*
+        check if game rom == Spaceflight 2091!. is it OK?
+        if self.index.checked_add(self.v[register_x]).is_none() {
+            self.v[0xF] = 1
+        }
+        else {
+            self.v[0xF] = 0;
+        }
+        */
+        self.index = self.index.wrapping_add(self.v[register_x].into());
+    }
+
+
+    fn substract_vx_vy(&mut self, register_x: usize, register_y: usize) { // 8XY5
+        if self.v[register_x] > self.v[register_y] {
+            self.v[0xF] = 1;
+        }
+        else {
+            self.v[0xF] = 0;
+        }
+        // is wrapping sub OK?
+        self.v[register_x] = self.v[register_x].wrapping_sub(self.v[register_y]);
+    }
+
+
+    fn substract_vy_vx(&mut self, register_x: usize, register_y: usize) { // 8XY7
+        if self.v[register_y] > self.v[register_x] {
+            self.v[0xF] = 1;
+        }
+        else {
+            self.v[0xF] = 0;
+        }
+        // is wrapping sub OK?
+        self.v[register_x] = self.v[register_y].wrapping_sub(self.v[register_x]);
+    }
+
+
+    fn shift_right(&mut self, register_x: usize, register_y: usize) { // 8XY6
+        // if chip8.mode != SUPER_CHIP && chip8.mode != CHIP_48 {
+        self.v[register_x] = self.v[register_y];
+        //}
+
+        if self.v[register_x] & 0b0000_0001 == 0b0000_0001 {
+            self.v[0xF] = 1;
+        }
+        else {
+            self.v[0xF] = 0;
+        }
+        self.v[register_x] >>= 1;
+    }
+
+
+    fn shift_left(&mut self, register_x: usize, register_y: usize) { // 8XYE
+        // if chip8.mode != SUPER_CHIP && chip8.mode != CHIP_48 {
+        self.v[register_x] = self.v[register_y];
+        //}
+
+        if self.v[register_x] & 0b1000_0000 == 0b1000_0000 {
+            self.v[0xF] = 1;
+        }
+        else {
+            self.v[0xF] = 0;
+        }
+        self.v[register_x] <<= 1;
+    }
+
+
     fn skip_if_equal(&mut self, register_x: usize, value: u8) -> Result<(), RegisterError> {
         if !Self::is_valid_register(register_x) {
             return Err(RegisterError::InvalidRegister(register_x));
