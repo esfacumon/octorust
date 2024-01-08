@@ -17,4 +17,11 @@ pub enum Instruction {
     SkipIfNotEqual { register_x: usize, value: u8 },
     SkipIfRegistersEqual { register_x: usize, register_y: usize },
     SkipIfRegistersNotEqual { register_x: usize, register_y: usize },
+    SubstractVXVY {register_x: usize, register_y: usize},
+    SubstractVYVX {register_x: usize, register_y: usize},
+    ShiftLeft {register_x: usize, register_y: usize},
+    ShiftRight {register_x: usize, register_y: usize},
+    AddI { register_x: usize},
+    SkipIfKeyPressed { keycode: u8},
+    SkipIfKeyNotPressed { keycode: u8},
 }

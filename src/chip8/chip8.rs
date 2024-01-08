@@ -128,6 +128,26 @@ impl Chip8 {
                 let n = get_nibble(instruction, 4);
                 Instruction::DisplayDraw { register_x, register_y, n }
             },
+            0xE => {
+                let keycode = get_nibble(instruction, 2);
+
+                match get_nibble(instruction, 4) {
+
+                    0xE => {
+                        Instruction::SkipIfKeyPressed { keycode }
+                    },
+                    0x1 => {
+                        Instruction::SkipIfKeyNotPressed { keycode }
+                    },
+                    _ => {
+                        Instruction::Nop
+                    },
+                }
+            },
+            0xF => {
+                let register_x = get_nibble(instruction, 2);
+                Instruction::AddI { register_x: register_x.into() }
+            },
             0x8 => {
                 let register_x = get_nibble(instruction, 2);
                 let register_y = get_nibble(instruction, 3);
@@ -147,6 +167,18 @@ impl Chip8 {
                     },
                     0x4 => {
                         Instruction::AddVX { register_x, register_y }
+                    },
+                    0x5 => {
+                        Instruction::SubstractVXVY { register_x: register_x.into(), register_y: register_y.into() }
+                    },
+                    0x6 => {
+                        Instruction::ShiftRight { register_x: register_x.into(), register_y: register_y.into() }
+                    },
+                    0x7 => {
+                        Instruction::SubstractVYVX { register_x: register_x.into(), register_y: register_y.into() }
+                    },
+                    0xE => {
+                        Instruction::ShiftLeft { register_x: register_x.into(), register_y: register_y.into() }
                     },
                     _ => Instruction::Nop
                 }
@@ -171,15 +203,22 @@ impl Chip8 {
             Instruction::Add { register, value } => Chip8::add(&mut self.v, register, value).expect("ADD error"),
             Instruction::SetI { value } => Chip8::set_i(&mut self.index, value),
             Instruction::DisplayDraw { register_x, register_y, n } => Chip8::display(self, register_x as usize, register_y as usize, n),
-            Instruction::BinaryOrVX{ register_x, register_y } => Chip8::binary_or_vx(self, register_x as usize, register_y as usize),
-            Instruction::BinaryAndVX{ register_x, register_y } => Chip8::binary_and_vx(self, register_x as usize, register_y as usize),
-            Instruction::BinaryXorVX{ register_x, register_y } => Chip8::binary_xor_vx(self, register_x as usize, register_y as usize),
-            Instruction::AddVX{ register_x, register_y } => Chip8::add_vx(self, register_x as usize, register_y as usize),
+            Instruction::BinaryOrVX { register_x, register_y } => Chip8::binary_or_vx(self, register_x as usize, register_y as usize),
+            Instruction::BinaryAndVX { register_x, register_y } => Chip8::binary_and_vx(self, register_x as usize, register_y as usize),
+            Instruction::BinaryXorVX { register_x, register_y } => Chip8::binary_xor_vx(self, register_x as usize, register_y as usize),
+            Instruction::AddVX { register_x, register_y } => Chip8::add_vx(self, register_x as usize, register_y as usize),
             Instruction::Nop => println!("Nop"),
-            Instruction::SkipIfEqual{ register_x, value} => Chip8::skip_if_equal(self, register_x, value).expect("SkipIfEqual error"),
-            Instruction::SkipIfNotEqual{ register_x, value} => Chip8::skip_if_not_equal(self, register_x, value).expect("SkipIfNotEqual error"),
-            Instruction::SkipIfRegistersEqual{ register_x, register_y} => Chip8::skip_if_registers_equal(self, register_x, register_y).expect("SkipIfRegistersEqual error"),
-            Instruction::SkipIfRegistersNotEqual{ register_x, register_y} => Chip8::skip_if_registers_not_equal(self, register_x, register_y).expect("SkipIfRegistersNotEqual error"),
+            Instruction::SkipIfEqual { register_x, value} => Chip8::skip_if_equal(self, register_x, value).expect("SkipIfEqual error"),
+            Instruction::SkipIfNotEqual { register_x, value} => Chip8::skip_if_not_equal(self, register_x, value).expect("SkipIfNotEqual error"),
+            Instruction::SkipIfRegistersEqual { register_x, register_y } => Chip8::skip_if_registers_equal(self, register_x, register_y).expect("SkipIfRegistersEqual error"),
+            Instruction::SkipIfRegistersNotEqual { register_x, register_y } => Chip8::skip_if_registers_not_equal(self, register_x, register_y).expect("SkipIfRegistersNotEqual error"),
+            Instruction::SubstractVXVY { register_x, register_y } => Chip8::substract_vx_vy(self, register_x, register_y),
+            Instruction::SubstractVYVX { register_x, register_y } => Chip8::substract_vy_vx(self, register_x, register_y),
+            Instruction::ShiftRight { register_x, register_y } => Chip8::shift_right(self, register_x, register_y),
+            Instruction::ShiftLeft { register_x, register_y } => Chip8::shift_left(self, register_x, register_y),
+            Instruction::AddI { register_x } => Chip8::add_i(self, register_x),
+            Instruction::SkipIfKeyPressed { keycode } => Chip8::skip_if_key_pressed(self, keycode),
+            Instruction::SkipIfKeyNotPressed { keycode } => Chip8::skip_if_key_not_pressed(self, keycode),
         }
     }
 
@@ -519,6 +558,22 @@ impl Chip8 {
         }
         
         Ok(())
+    }
+
+
+    fn skip_if_key_pressed (&mut self, _keycode: u8) {
+        let is_key_pressed = true; // TODO: input handling
+        if is_key_pressed {
+            self.pc += 0x02;
+        }
+    }
+
+    
+    fn skip_if_key_not_pressed (&mut self, _keycode: u8) {
+        let is_key_pressed = true;
+        if !is_key_pressed {
+            self.pc += 0x02;
+        }
     }
 }
 

@@ -26,4 +26,3 @@ pub fn get_nibble(addr: u16, nibble_number: u8) -> u8 {
     };
     ((addr & bit_mask) >> (12 - (4 * (nibble_number - 1)))).try_into().unwrap()
 }
-
