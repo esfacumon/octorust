@@ -45,10 +45,10 @@ Instructions needed to run a basic ROM which displays IBM Logo on screen. This R
   |✅         |`8XY7`| Substract VX=VY-VX
   |✅         |`8XY6`| Shift
   |✅         |`8XYE`| Shift
-  |🔜         |`BNNN`| Jump with offset
-  |🔜         |`CXNN`| Random
-  |⌛         |`EX9E`| Skip if
-  |⌛         |`EXA1`| Skip if
+  |⌛         |`BNNN`| Jump with offset
+  |⌛         |`CXNN`| Random
+  |✅         |`EX9E`| Skip if
+  |✅         |`EXA1`| Skip if
   |🔜         |`FX07`, `FX15` and `FX18`| Timers
   |✅         |`FX1E`| Add index register I
   |🔜         |`FX0A`| Get key (on key up, beeps while pressed down)
