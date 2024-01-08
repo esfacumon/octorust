@@ -57,9 +57,17 @@ Instructions needed to run a basic ROM which displays IBM Logo on screen. This R
   |🔜         |`FX55`| Store
   |🔜         |`FX65`| Load
 
-### Input handling
+### Next steps
 
-  🔜
+- Implement all instructions
+- Implement input handling
+  - Make it layout independant
+- Implement sound handling
+
+### Future ideas and improvements
+
+- Design and implement UI
+- WebAssembly support
 
 ## Thank you! 💕
 
